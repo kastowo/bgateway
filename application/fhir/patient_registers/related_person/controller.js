@@ -143,7 +143,7 @@ var controller = {
 					}
 				}
 
-				console.log(relatedPersonBirthdate);
+				
 				if(typeof relatedPersonBirthdate !== 'undefined'){
 					if(!validator.isEmpty(relatedPersonBirthdate)){
 						if(!regex.test(relatedPersonBirthdate)){
@@ -227,7 +227,7 @@ var controller = {
 						res.json({"err_code": 1, "err_msg": "Telecom is empty."});
 					}
 				}
-				console.log(qString)
+				
 				seedPhoenixFHIR.path.GET = {
 					"RelatedPerson" : {
 						"location": "%(apikey)s/RelatedPerson",

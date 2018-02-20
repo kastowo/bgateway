@@ -129,7 +129,7 @@ var controller = {
       }
 
       if((typeof relatedPersonName !== 'undefined' && relatedPersonName !== "") || (typeof relatedPersonPhonetic !== 'undefined' && relatedPersonPhonetic !== "")){
-        join += " LEFT JOIN BACIRO_FHIR.HUMAN_NAME hn ON hn.patient_id = p.patient_id ";
+        join += " LEFT JOIN BACIRO_FHIR.HUMAN_NAME hn ON hn.related_person_id = rp.related_person_id ";
 
         if(typeof relatedPersonName !== 'undefined' && relatedPersonName !== ""){
           if(relatedPersonName.indexOf('nonbreaking_space') > 0){
