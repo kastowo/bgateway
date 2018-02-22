@@ -2273,7 +2273,7 @@ var controller = {
 						}
 					}else{
 						err_code = 1;
-						err_msg = "Please add sub-key 'use' in json identifier request.";
+						err_msg = "Please add key 'use' in json request.";
 					} 
 
 					//type code
@@ -2285,7 +2285,7 @@ var controller = {
 						}
 					}else{
 						err_code = 1;
-						err_msg = "Please add sub-key 'type' in json identifier request.";
+						err_msg = "Please add key 'type' in json request.";
 					} 
 
 					//identifier uniqe value
@@ -2297,7 +2297,7 @@ var controller = {
 						}
 					}else{
 						err_code = 1;
-						err_msg = "Please add sub-key 'value' in json identifier request.";
+						err_msg = "Please add key 'value' in json request.";
 					}
 
 					//identifier period start
@@ -2347,10 +2347,10 @@ var controller = {
 															
 											  				ApiFHIR.post('identifier', {"apikey": apikey}, {body: dataIdentifier, json: true}, function(error, response, body){
 											  					identifier = body;
-											  					if(identifier.err_code > 0){
-											  						res.json(identifier);	
+											  					if(identifier.err_code == 0){
+											  						res.json({"err_code": 0, "err_msg": "Identifier has been add in this patient.", "data": identifier.data});
 											  					}else{
-											  						res.json({"err_code": 0, "err_msg": "Identifier has been add in this patient.", "data": identifier.data})
+											  						res.json(identifier);	
 											  					}
 											  				})
 															}else{
@@ -2378,10 +2378,156 @@ var controller = {
 					}else{
 						res.json({"err_code": err_code, "err_msg": err_msg});
 					}
+				},
+				humanName: function addHumanName(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+
+					var err_code = 0;
+					var err_msg = "";
+
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					//name
+					//use code
+					if(typeof req.body.use !== 'undefined'){
+						humanNameUseCode =  req.body.use.trim().toLowerCase();
+						if(validator.isEmpty(humanNameUseCode)){
+							err_code = 2;
+							err_msg = "Name Use Code is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'use' in json name request.";
+					} 
+
+					//fullname
+					if(typeof req.body.text !== 'undefined'){
+						humanNameText =  req.body.text;
+						if(validator.isEmpty(humanNameText)){
+							err_code = 2;
+							err_msg = "Name text is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'text' in your json name request.";
+					} 
+
+					//surname
+					if(typeof req.body.family !== 'undefined'){
+						humanNameFamily =  req.body.family;
+						if(validator.isEmpty(humanNameFamily)){
+							err_code = 2;
+							err_msg = "Family name is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'family' in your json name request.";
+					}
+
+					//given name
+					if(typeof req.body.given !== 'undefined'){
+						humanNameGiven =  req.body.given;
+						if(validator.isEmpty(humanNameGiven)){
+							humanNameGiven = "";
+						}
+					}else{
+						humanNameGiven = "";
+					}
+
+					//prefix name
+					if(typeof req.body.prefix !== 'undefined'){
+						humanNamePrefix =  req.body.prefix;
+						if(validator.isEmpty(humanNamePrefix)){
+							humanNamePrefix = '';		
+						}
+					}else{
+						humanNamePrefix = '';
+					}
+
+					//suffix name
+					if(typeof req.body.suffix !== 'undefined'){
+						humanNameSuffix =  req.body.suffix;
+					}else{
+						humanNameSuffix =  "";
+					}
+
+					//period name
+					if(typeof req.body.period !== 'undefined'){
+						var period = req.body.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							humanNamePeriodStart = arrPeriod[0];
+							humanNamePeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(humanNamePeriodStart) && !regex.test(humanNamePeriodEnd)){
+								err_code = 2;
+								err_msg = "Identifier Period invalid date format.";
+							}	
+						}else{
+							humanNamePeriodStart = "";
+							humanNamePeriodEnd = "";
+						}
+					}else{
+						humanNamePeriodStart = "";
+						humanNamePeriodEnd = "";
+					}
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){	
+								checkCode(apikey, humanNameUseCode, 'NAME_USE', function(resNameUseCode){
+									if(resNameUseCode.err_code > 0){
+										var humanNameId = 'hn' + uniqid.time();
+										dataHumanName = {
+			  													"id": humanNameId,
+			  													"use": humanNameUseCode,
+			  													"text": humanNamePrefix +' '+ humanNameText +' '+ humanNameSuffix,
+			  													"family": humanNameFamily,
+			  													"given": humanNameGiven,
+			  													"prefix": humanNamePrefix,
+			  													"suffix": humanNameSuffix,
+			  													"period_start": humanNamePeriodStart,
+			  													"period_end": humanNamePeriodEnd,
+			  													"patient_id": patientId
+			  												}
+
+					  				ApiFHIR.post('humanName', {"apikey": apikey}, {body: dataHumanName, json: true}, function(error, response, body){
+					  					humanName = body;
+					  					if(humanName.err_code == 0){
+					  						res.json({"err_code": 0, "err_msg": "Human Name has been add in this patient.", "data": humanName.data});
+					  					}else{
+					  						res.json(humanName);	
+					  					}
+					  				})
+									}else{
+										res.json({"err_code": 501, "err_msg": "Name use code not found"});		
+									}
+								})
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
 				} 	
 			},
 			put: {
-				identifier: function addIdentifier(req, res){
+				identifier: function updateIdentifier(req, res){
 					var ipAddres = req.connection.remoteAddress;
 					var apikey = req.params.apikey;
 					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
@@ -2421,6 +2567,8 @@ var controller = {
 						}else{
 							dataIdentifier.use = identifierUseCode;
 						}
+					}else{
+						identifierUseCode = "";
 					} 
 
 					//type code
@@ -2432,6 +2580,8 @@ var controller = {
 						}else{
 							dataIdentifier.type = identifierTypeCode;
 						}
+					}else{
+						identifierTypeCode = "";
 					} 
 
 					//identifier uniqe value
@@ -2444,6 +2594,8 @@ var controller = {
 							dataIdentifier.value = identifierValue;
 							dataIdentifier.system = host + ':' + port + '/' + apikey + '/Patient/'+ patientId +'/Identifier/'+ identifierId;
 						}
+					}else{
+						identifierValue = "";
 					}
 
 					//identifier period start
@@ -2465,51 +2617,216 @@ var controller = {
 							err_code = 1;
 							err_msg = "Period request format is wrong, `ex: start to end` ";
 						}
+					}else{
+						identifierPeriodStart = "";
+						identifierPeriodEnd = "";
 					}  
 
 					if(err_code == 0){
 						//check apikey
 						checkApikey(apikey, ipAddres, function(result){
-							if(result.err_code == 0){	
-								checkCode(apikey, identifierUseCode, 'IDENTIFIER_USE', function(resUseCode){
-									if(resUseCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+							if(result.err_code == 0){
+								myEmitter.prependListener('checkPatientID', function(){
+									checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+										if(resPatientID.err_code > 0){
+											checkUniqeValue(apikey, "IDENTIFIER_ID|" + identifierId, 'IDENTIFIER', function(resIdentifierID){
+												if(resIdentifierID.err_code > 0){
+													ApiFHIR.put('identifier', {"apikey": apikey, "_id": identifierId, "dr": "PATIENT_ID|"+patientId}, {body: dataIdentifier, json: true}, function(error, response, body){
+								  					identifier = body;
+								  					if(identifier.err_code > 0){
+								  						res.json(identifier);	
+								  					}else{
+								  						res.json({"err_code": 0, "err_msg": "Identifier has been update in this patient.", "data": identifier.data});
+								  					}
+								  				})
+												}else{
+													res.json({"err_code": 505, "err_msg": "Identifier Id not found"});		
+												}
+											})
+										}else{
+											res.json({"err_code": 504, "err_msg": "Patient Id not found"});		
+										}
+									})
+								})
+
+								myEmitter.prependListener('checkIdentifierValue', function(){
+									if(validator.isEmpty(identifierValue)){
+										myEmitter.emit('checkPatientID');
+									}else{
+										checkUniqeValue(apikey, "IDENTIFIER_VALUE|" + identifierValue, 'IDENTIFIER', function(resIdentifierValue){
+											if(resIdentifierValue.err_code == 0){
+												myEmitter.emit('checkPatientID');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Identifier value already exist."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkIdentifierType', function(){
+									if(validator.isEmpty(identifierTypeCode)){
+										myEmitter.emit('checkIdentifierValue');
+									}else{
 										checkCode(apikey, identifierTypeCode, 'IDENTIFIER_TYPE', function(resUseTypeCode){
 											if(resUseTypeCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
-												checkUniqeValue(apikey, "IDENTIFIER_VALUE|" + identifierValue, 'IDENTIFIER', function(resIdentifierValue){
-													if(resIdentifierValue.err_code == 0){
-														checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
-															if(resPatientID.err_code > 0){
-																checkUniqeValue(apikey, "IDENTIFIER_ID|" + identifierId, 'IDENTIFIER', function(resIdentifierID){
-																	if(resIdentifierID.err_code > 0){
-																		ApiFHIR.put('identifier', {"apikey": apikey, "_id": identifierId, "dr": "PATIENT_ID|"+patientId}, {body: dataIdentifier, json: true}, function(error, response, body){
-													  					identifier = body;
-													  					if(identifier.err_code > 0){
-													  						res.json(identifier);	
-													  					}else{
-													  						res.json({"err_code": 0, "err_msg": "Identifier has been update in this patient.", "data": identifier.data});
-													  					}
-													  				})
-																	}else{
-																		res.json({"err_code": 505, "err_msg": "Identifier Id not found"});		
-																	}
-																})
-															}else{
-																res.json({"err_code": 504, "err_msg": "Patient Id not found"});		
-															}
-														})
-													}else{
-														res.json({"err_code": 503, "err_msg": "Identifier value already exist."});	
-													}
-												})
-												
+												myEmitter.emit('checkIdentifierValue');
 											}else{
 												res.json({"err_code": 502, "err_msg": "Identifier type code not found"});		
 											}
 										})
-									}else{
-										res.json({"err_code": 501, "err_msg": "Identifier use code not found"});
 									}
 								})
+
+								if(validator.isEmpty(identifierUseCode)){
+									myEmitter.emit('checkIdentifierType');	
+								}else{
+									checkCode(apikey, identifierUseCode, 'IDENTIFIER_USE', function(resUseCode){
+										if(resUseCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+											myEmitter.emit('checkIdentifierType');
+										}else{
+											res.json({"err_code": 501, "err_msg": "Identifier use code not found"});
+										}
+									})
+								}
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
+				},
+				humanName: function updateHumanName(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+					var humanNameId = req.params.human_name_id;
+
+					var err_code = 0;
+					var err_msg = "";
+					var dataHumanName = {};
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					if(typeof humanNameId !== 'undefined'){
+						if(validator.isEmpty(humanNameId)){
+							err_code = 2;
+							err_msg = "Human Name id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Human Name id is required";
+					}
+
+					//name
+					//use code
+					if(typeof req.body.use !== 'undefined'){
+						humanNameUseCode =  req.body.use.trim().toLowerCase();
+						if(validator.isEmpty(humanNameUseCode)){
+							err_code = 2;
+							err_msg = "Name Use Code is required";
+						}else{
+							dataHumanName.use = humanNameUseCode;
+						}
+					} 
+
+					//fullname
+					if(typeof req.body.text !== 'undefined'){
+						humanNameText =  req.body.text;
+						if(validator.isEmpty(humanNameText)){
+							err_code = 2;
+							err_msg = "Name text is required";
+						}else{
+							dataHumanName.text = humanNameText;
+						}
+					} 
+
+					//surname
+					if(typeof req.body.family !== 'undefined'){
+						humanNameFamily =  req.body.family;
+						if(validator.isEmpty(humanNameFamily)){
+							err_code = 2;
+							err_msg = "Family name is required";
+						}else{
+							dataHumanName.family = humanNameFamily;
+						}
+					}
+
+					//given name
+					if(typeof req.body.given !== 'undefined'){
+						dataHumanName.given =  req.body.given;
+					}
+
+					//prefix name
+					if(typeof req.body.prefix !== 'undefined'){
+						humanNamePrefix =  req.body.prefix;
+						dataHumanName.prefix = humanNamePrefix;
+					}
+
+					//suffix name
+					if(typeof req.body.suffix !== 'undefined'){
+						humanNameSuffix =  req.body.suffix;
+						dataHumanName.prefix = humanNamePrefix;
+					}
+
+					//period name
+					if(typeof req.body.period !== 'undefined'){
+						var period = req.body.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							humanNamePeriodStart = arrPeriod[0];
+							humanNamePeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(humanNamePeriodStart) && !regex.test(humanNamePeriodEnd)){
+								err_code = 2;
+								err_msg = "Human Name Period invalid date format.";
+							}else{
+								dataHumanName.period_start = humanNamePeriodStart;
+								dataHumanName.period_end = humanNamePeriodEnd;
+							}	
+						}
+					} 
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+									if(resPatientID.err_code > 0){
+										checkUniqeValue(apikey, "HUMAN_NAME_ID|" + humanNameId, 'HUMAN_NAME', function(resHumanNameID){
+											if(resHumanNameID.err_code > 0){
+												checkCode(apikey, humanNameUseCode, 'NAME_USE', function(resUseCode){
+													if(resUseCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+														ApiFHIR.put('humanName', {"apikey": apikey, "_id": humanNameId, "dr": "PATIENT_ID|"+patientId}, {body: dataHumanName, json: true}, function(error, response, body){
+									  					humanName = body;
+									  					if(humanName.err_code > 0){
+									  						res.json(humanName);	
+									  					}else{
+									  						res.json({"err_code": 0, "err_msg": "Human Name has been update in this patient.", "data": humanName.data});
+									  					}
+									  				})	
+													}else{
+														res.json({"err_code": 501, "err_msg": "Name use code not found"});
+													}
+												})
+											}else{
+												res.json({"err_code": 505, "err_msg": "Human Name Id not found"});		
+											}
+										})
+									}else{
+										res.json({"err_code": 504, "err_msg": "Patient Id not found"});		
+									}
+								})								
 							}else{
 								result.err_code = 500;
 								res.json(result);

@@ -126,7 +126,7 @@ var controller = {
       
       var arrIdentifier = [];
       var query = "SELECT identifier_id, identifier_use, identifier_type, identifier_system, identifier_value, identifier_period_start, identifier_period_end, org.organization_id as organization_id FROM BACIRO_FHIR.IDENTIFIER i LEFT JOIN BACIRO_FHIR.ORGANIZATION org on i.organization_id = org.organization_id " + fixCondition; //join ke organization
-      console.log(query)
+      
       db.query(query,function(dataJson){
         rez = lowercaseObject(dataJson);
         for(i = 0; i < rez.length; i++){
@@ -136,8 +136,7 @@ var controller = {
           Identifier.type = rez[i].identifier_type;
           Identifier.system = rez[i].identifier_system;
           Identifier.value = rez[i].identifier_value;
-          Identifier.period_start = formatDate(rez[i].identifier_period_start);
-          Identifier.period_end = formatDate(rez[i].identifier_period_end);
+          Identifier.period = formatDate(rez[i].identifier_period_start)+' to '+ formatDate(rez[i].identifier_period_end);
           Identifier.assigner = rez[i].organization_id;
           
           arrIdentifier[i] = Identifier;
@@ -1540,10 +1539,27 @@ var controller = {
         " VALUES ('"+human_name_id+"', " + values.slice(0, -1) + ")";
       
       db.upsert(query,function(succes){
+        var arrHumanName = [];
         var query = "SELECT human_name_id, human_name_use, human_name_text, human_name_family, human_name_given, human_name_prefix, human_name_suffix, human_name_period_start, human_name_period_end FROM BACIRO_FHIR.HUMAN_NAME WHERE human_name_id = '" + human_name_id + "'";
         db.query(query,function(dataJson){
           rez = lowercaseObject(dataJson);
-          res.json({"err_code":0,"data":rez});
+          for(i = 0; i < rez.length; i++){
+            var HumanName = {};
+            HumanName.id = rez[i].human_name_id;
+            HumanName.use = rez[i].human_name_use;
+            HumanName.text = rez[i].human_name_text;
+            HumanName.family = rez[i].human_name_family;
+            HumanName.given = rez[i].human_name_given;
+            HumanName.prefix = rez[i].human_name_prefix;
+            HumanName.prefix = rez[i].human_name_suffix;
+            if(rez[i].human_name_period_start == null){
+              HumanName.period = formatDate(rez[i].human_name_period_start) +' to '+ formatDate(rez[i].human_name_period_end);
+            }else{
+              HumanName.period = "";
+            }
+            arrHumanName[i] = HumanName;
+          }
+          res.json({"err_code":0,"data": arrHumanName});
         },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addHumanName"});
         });
@@ -2608,6 +2624,100 @@ var controller = {
             arrIdentifier[i] = Identifier;
           }
           res.json({"err_code":0,"data": arrIdentifier});
+        },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateIdentifier"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateIdentifier"});
+      });
+    },
+    humanName: function updateHumanName(req, res){
+      var _id = req.params._id;
+      var domainResource = req.params.dr;
+
+      var human_name_use = req.body.use;
+      var human_name_text = req.body.text;
+      var human_name_family = req.body.family;
+      var human_name_given = req.body.given;
+      var human_name_prefix = req.body.prefix;
+      var human_name_suffix = req.body.suffix;
+      var human_name_period_start = req.body.period_start;
+      var human_name_period_end = req.body.period_end;
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof human_name_use !== 'undefined'){
+        column += 'human_name_use,';
+        values += "'" +human_name_use +"',";
+      }
+
+      if(typeof human_name_text !== 'undefined'){
+        column += 'human_name_text,';
+        values += "'" +human_name_text +"',";
+      }
+
+      if(typeof human_name_family !== 'undefined'){
+        column += 'human_name_family,';
+        values += "'" +human_name_family +"',";
+      }
+
+      if(typeof human_name_given !== 'undefined'){
+        column += 'human_name_given,';
+        values += "'" +human_name_given +"',";
+      }
+
+      if(typeof human_name_prefix !== 'undefined'){
+        column += 'human_name_prefix,';
+        values += "'" +human_name_prefix +"',";
+      }
+
+      if(typeof human_name_suffix !== 'undefined'){
+        column += 'human_name_suffix,';
+        values += "'" +human_name_suffix +"',";
+      }
+
+      if(typeof human_name_period_start !== 'undefined'){
+        column += 'human_name_period_start,';
+        values += "to_date('" + human_name_period_start +"', 'yyyy-MM-dd'),";
+      }
+
+      if(typeof human_name_period_end !== 'undefined'){
+        column += 'human_name_period_end,';
+        values += "to_date('" + human_name_period_end +"', 'yyyy-MM-dd'),";
+      }
+
+      var arrResource = domainResource.split('|');
+      var fieldResource = arrResource[0];
+      var valueResource = arrResource[1];
+      var condition = "human_name_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+
+      var query = "UPSERT INTO BACIRO_FHIR.HUMAN_NAME(human_name_id," + column.slice(0, -1) + ") SELECT human_name_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.HUMAN_NAME WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var arrHumanName = [];
+        var query = "SELECT human_name_id, human_name_use, human_name_text, human_name_family, human_name_given, human_name_prefix, human_name_suffix, human_name_period_start, human_name_period_end FROM BACIRO_FHIR.HUMAN_NAME WHERE "+ condition;
+        
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          for(i = 0; i < rez.length; i++){
+            var HumanName = {};
+            HumanName.id = rez[i].human_name_id;
+            HumanName.use = rez[i].human_name_use;
+            HumanName.text = rez[i].human_name_text;
+            HumanName.family = rez[i].human_name_family;
+            HumanName.given = rez[i].human_name_given;
+            HumanName.prefix = rez[i].human_name_prefix;
+            HumanName.prefix = rez[i].human_name_suffix;
+            if(rez[i].human_name_period_start == null){
+              HumanName.period = formatDate(rez[i].human_name_period_start) +' to '+ formatDate(rez[i].human_name_period_end);
+            }else{
+              HumanName.period = "";
+            }
+            arrHumanName[i] = HumanName;
+          }
+          res.json({"err_code":0,"data": arrHumanName});
         },function(e){
           res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateIdentifier"});
         });
