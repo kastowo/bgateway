@@ -7,7 +7,7 @@ var yamlconfig = require('yaml-config');
 var path = require('path');
 
 var configYaml = yamlconfig.readConfig(path.resolve('../../application/config/config.yml'));
-
+  
 var host = configYaml.fhir.host;
 var port = configYaml.fhir.port;
 

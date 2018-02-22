@@ -37,7 +37,7 @@ var controller = {
       var condition = '';
 
       var query = "SELECT id FROM BACIRO_FHIR." + name + " WHERE code = '" + code + "' ";
-      console.log(query)
+      
       db.query(query,function(dataJson){
         rez = lowercaseObject(dataJson);
         res.json({"err_code":0,"data":rez});
@@ -94,6 +94,7 @@ var controller = {
       });
     },
     Identifier: function getIdentifier(req, res){
+      var identifierId = req.query._id;
       var personId = req.query.person_id;
       var patientId = req.query.patient_id;
       var relatedPersonId = req.query.related_person_id;
@@ -101,16 +102,20 @@ var controller = {
       //susun query
       var condition = "";
 
+      if(typeof identifierId !== 'undefined' && identifierId !== ""){
+        condition += "identifier_id = '" + identifierId + "' AND ";  
+      }
+
       if(typeof personId !== 'undefined' && personId !== ""){
-        condition += "person_id = '" + personId + "' AND,";  
+        condition += "person_id = '" + personId + "' AND ";  
       }
 
       if(typeof patientId !== 'undefined' && patientId !== ""){
-        condition += "i.patient_id = '" + patientId + "' AND,";  
+        condition += "i.patient_id = '" + patientId + "' AND ";  
       }
 
       if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
-        condition += "i.related_person_id = '" + relatedPersonId + "' AND,";  
+        condition += "i.related_person_id = '" + relatedPersonId + "' AND ";  
       }
 
       if(condition == ""){
@@ -120,8 +125,8 @@ var controller = {
       }
       
       var arrIdentifier = [];
-      var query = "SELECT identifier_id, identifier_use, identifier_type, identifier_value, identifier_period_start, identifier_period_end, org.organization_id as organization_id FROM BACIRO_FHIR.IDENTIFIER i LEFT JOIN BACIRO_FHIR.ORGANIZATION org on i.organization_id = org.organization_id " + fixCondition; //join ke organization
-      
+      var query = "SELECT identifier_id, identifier_use, identifier_type, identifier_system, identifier_value, identifier_period_start, identifier_period_end, org.organization_id as organization_id FROM BACIRO_FHIR.IDENTIFIER i LEFT JOIN BACIRO_FHIR.ORGANIZATION org on i.organization_id = org.organization_id " + fixCondition; //join ke organization
+      console.log(query)
       db.query(query,function(dataJson){
         rez = lowercaseObject(dataJson);
         for(i = 0; i < rez.length; i++){
@@ -129,6 +134,7 @@ var controller = {
           Identifier.id = rez[i].identifier_id;
           Identifier.use = rez[i].identifier_use;
           Identifier.type = rez[i].identifier_type;
+          Identifier.system = rez[i].identifier_system;
           Identifier.value = rez[i].identifier_value;
           Identifier.period_start = formatDate(rez[i].identifier_period_start);
           Identifier.period_end = formatDate(rez[i].identifier_period_end);
@@ -306,7 +312,7 @@ var controller = {
           Address.district = rez[i].address_district;
           Address.state = rez[i].address_state;
           Address.postal_code = rez[i].address_postal_code;
-          Address.address_country = rez[i].address_country;
+          Address.country = rez[i].address_country;
 
           if(rez[i].address_period_start == null){
             Address.period_start = formatDate(rez[i].address_period_start);  
@@ -1423,12 +1429,23 @@ var controller = {
      
       var query = "UPSERT INTO BACIRO_FHIR.IDENTIFIER(identifier_id, " + column.slice(0, -1) + ")"+
         " VALUES ('"+ identifier_id +"', " + values.slice(0, -1) + ")";
-      
       db.upsert(query,function(succes){
+        var arrIdentifier = [];
         var query = "SELECT identifier_id, identifier_use, identifier_type, identifier_system, identifier_value, identifier_period_start, identifier_period_end FROM BACIRO_FHIR.IDENTIFIER WHERE identifier_id = '" + identifier_id + "' ";
         db.query(query,function(dataJson){
           rez = lowercaseObject(dataJson);
-          res.json({"err_code":0,"data":rez});
+          for(i = 0; i < rez.length; i++){
+            var Identifier = {};
+            Identifier.id = rez[i].identifier_id;
+            Identifier.use = rez[i].identifier_use;
+            Identifier.type = rez[i].identifier_type;
+            Identifier.system = rez[i].identifier_system;
+            Identifier.value = rez[i].identifier_value;
+            Identifier.period = formatDate(rez[i].identifier_period_start) +' to '+ formatDate(rez[i].identifier_period_end);
+
+            arrIdentifier[i] = Identifier;
+          }
+          res.json({"err_code":0,"data": arrIdentifier});
         },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addIdentifier"});
         });
@@ -2519,6 +2536,83 @@ var controller = {
         });
       },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAttachment"});
+      });
+    },
+    identifier: function updateIdentifier(req, res){
+      var _id = req.params._id;
+      var domainResource = req.params.dr;
+
+      var identifier_use = req.body.use;
+      var identifier_type = req.body.type;
+      var identifier_system = req.body.system;
+      var identifier_value = req.body.value;
+      var identifier_period_start = req.body.period_start;
+      var identifier_period_end = req.body.period_end;
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof identifier_use !== 'undefined'){
+        column += 'identifier_use,';
+        values += "'" +identifier_use +"',";
+      }
+
+      if(typeof identifier_type !== 'undefined'){
+        column += 'identifier_type,';
+        values += "'" +identifier_type +"',";
+      }
+
+      if(typeof identifier_value !== 'undefined'){
+        column += 'identifier_value,';
+        values += "'" +identifier_value +"',";
+      }
+
+      if(typeof identifier_system !== 'undefined'){
+        column += 'identifier_system,';
+        values += "'" +identifier_system +"',";
+      }
+
+      if(typeof identifier_period_start !== 'undefined'){
+        column += 'identifier_period_start,';
+        values += "to_date('" + identifier_period_start +"', 'yyyy-MM-dd'),";
+      }
+
+      if(typeof identifier_period_end !== 'undefined'){
+        column += 'identifier_period_end,';
+        values += "to_date('" + identifier_period_end +"', 'yyyy-MM-dd'),";
+      }
+
+      var arrResource = domainResource.split('|');
+      var fieldResource = arrResource[0];
+      var valueResource = arrResource[1];
+      var condition = "identifier_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+
+      var query = "UPSERT INTO BACIRO_FHIR.IDENTIFIER(identifier_id," + column.slice(0, -1) + ") SELECT identifier_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.IDENTIFIER WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var arrIdentifier = [];
+        var query = "SELECT identifier_id, identifier_use, identifier_type, identifier_system, identifier_value, identifier_period_start, identifier_period_end FROM BACIRO_FHIR.IDENTIFIER WHERE "+ condition;
+        
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          for(i = 0; i < rez.length; i++){
+            var Identifier = {};
+            Identifier.id = rez[i].identifier_id;
+            Identifier.use = rez[i].identifier_use;
+            Identifier.type = rez[i].identifier_type;
+            Identifier.system = rez[i].identifier_system;
+            Identifier.value = rez[i].identifier_value;
+            Identifier.period = formatDate(rez[i].identifier_period_start) +' to '+ formatDate(rez[i].identifier_period_end);
+
+            arrIdentifier[i] = Identifier;
+          }
+          res.json({"err_code":0,"data": arrIdentifier});
+        },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateIdentifier"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateIdentifier"});
       });
     }
   }

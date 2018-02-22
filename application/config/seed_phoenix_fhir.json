@@ -290,6 +290,9 @@
          },
          "attachment":{
             "location": "%(apikey)s/attachment/%(_id)d"
+         },
+         "identifier":{
+            "location": "%(apikey)s/identifier/%(_id)s/%(dr)s"
          }
       }
    }

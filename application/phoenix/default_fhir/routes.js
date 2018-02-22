@@ -94,6 +94,7 @@ var routesDefaultFHIR = function(app, DefaultFHIR){
 	app.put('/:apikey/address-use/:_id', DefaultFHIR.put.addressUse);
 	app.put('/:apikey/address-type/:_id', DefaultFHIR.put.addressType);
 	app.put('/:apikey/attachment/:_id', DefaultFHIR.put.attachment);
+	app.put('/:apikey/identifier/:_id/:dr', DefaultFHIR.put.identifier);
 
 }
 module.exports = routesDefaultFHIR;
