@@ -13,7 +13,8 @@ var port = configYaml.phoenix.port;
 
 // var phoenix = require("./phoenix.js");
 var phoenix = require(path.resolve("./phoenix.js"));
-var db = new phoenix("jdbc:phoenix:" + host + ":/hbase-unsecure");
+// var db = new phoenix("jdbc:phoenix:" + host + ":/hbase-unsecure");
+var db = new phoenix("jdbc:phoenix:" + "192.168.1.231" + ":/hbase-unsecure");
 
 var controller = {
 	get: {
@@ -23,21 +24,161 @@ var controller = {
       var portFHIR = configYaml.fhir.port;
       
       var personId = req.query._id;
+      var personAddress = req.query.address;
+      var personAddressCity = req.query.city;
+      var personAddressCountry = req.query.country;
+      var personAddressPostalCode = req.query.postalcode;
+      var personAddressState = req.query.state; //space encodeURI masih ada bug untuk sprintf
+      var personAddressUse = req.query.addressuse; 
+      var personBirthdate = req.query.birthdate; 
+      var personEmail = req.query.email; 
+      var personGender = req.query.gender; 
+      var personIdentifier = req.query.identifier;
+      var personLink = req.query.link;
+      var personName = req.query.name; 
+      var personOrganization = req.query.organization; 
+      var personPatient = req.query.patient; 
+      var personPhone = req.query.phone; 
+      var personPractitioner = req.query.practitioner;
+      var personRelatedPerson = req.query.relatedperson;
+      var personPhonetic = req.query.phonetic; 
+      var personTelecom = req.query.telecom;
+
       //susun query
       var condition = "";
+      var join = "";
 
       if(typeof personId !== 'undefined' && personId !== ""){
-        condition += "person_id = '" + personId + "' AND,";  
+        condition += "p.person_id = '" + personId + "' AND ";  
+      }
+
+      if(typeof personBirthdate !== 'undefined' && personBirthdate !== ""){
+        condition += "person_birthdate = to_date('" + personBirthdate + "', 'yyyy-MM-dd') AND ";  
+      }
+
+      if(typeof personGender !== 'undefined' && personGender !== ""){
+        condition += "UPPER(person_gender) = '" + personGender.toUpperCase() + "' AND ";  
+      }
+
+      if(typeof personOrganization !== 'undefined' && personOrganization !== ""){
+        condition += "p.organization_id = '" + personOrganization + "' AND ";  
+      }
+
+      if((typeof personAddress !== 'undefined' && personAddress !== "")||(typeof personAddressCity !== 'undefined' && personAddressCity !== "")|| (typeof personAddressCountry !== 'undefined' && personAddressCountry !== "")|| (typeof personAddressPostalCode !== 'undefined' && personAddressPostalCode !== "")||(typeof personAddressState !== 'undefined' && personAddressState !== "")||(typeof personAddressUse !== 'undefined' && personAddressUse !== "")){
+         //set join 
+        join = " LEFT JOIN BACIRO_FHIR.ADDRESS addr ON addr.person_id = p.person_id ";
+        
+        if(typeof personAddress !== 'undefined' && personAddress !== ""){
+          if(personAddress.indexOf('nonbreaking_space') > 0){
+            personAddress = personAddress.replace(/nonbreaking_space/g, " ");
+          } 
+          condition += "UPPER(address_text) LIKE '%" + personAddress.toUpperCase() + "%' AND ";     
+        }
+
+        if(typeof personAddressCity !== 'undefined' && personAddressCity !== ""){
+          if(personAddressCity.indexOf('nonbreaking_space') > 0){
+            personAddressCity = personAddressCity.replace(/nonbreaking_space/g, " ");
+          }
+          condition += "UPPER(address_city) = '" + personAddressCity.toUpperCase() + "' AND ";  
+        }
+
+        if(typeof personAddressCountry !== 'undefined' && personAddressCountry !== ""){
+          if(personAddressCountry.indexOf('nonbreaking_space') > 0){
+            personAddressCountry = personAddressCountry.replace(/nonbreaking_space/g, " ");
+          }
+          condition += "UPPER(address_country) = '" + personAddressCountry.toUpperCase() + "' AND "; 
+        }
+
+        if(typeof personAddressPostalCode !== 'undefined' && personAddressPostalCode !== ""){
+          condition += "address_postal_code = '" + personAddressPostalCode + "' AND ";     
+        }
+
+        if(typeof personAddressState !== 'undefined' && personAddressState !== ""){
+          if(personAddressState.indexOf('nonbreaking_space') > 0){
+            personAddressState = personAddressState.replace(/nonbreaking_space/g, " ");
+          }
+          condition += "UPPER(address_state) = '" + personAddressState.toUpperCase() + "' AND "; 
+        }
+
+        if(typeof personAddressUse !== 'undefined' && personAddressUse !== ""){
+          condition += "UPPER(address_use) = '" + personAddressUse.toUpperCase() + "' AND ";     
+        }
+      }
+
+
+      if((typeof personEmail !== 'undefined' && personEmail !== "") || (typeof personTelecom !== 'undefined' && personTelecom !== "") || (typeof personPhone !== 'undefined' && personPhone !== "")){
+        join += " LEFT JOIN BACIRO_FHIR.CONTACT_POINT cp ON cp.person_id = p.person_id ";
+        
+        if(typeof personEmail !== 'undefined' && personEmail !== ""){
+          personEmail = personEmail.replace('at_sign', '@');
+          condition += "UPPER(contact_point_value) = '" + personEmail.toUpperCase() + "' AND contact_point_system = 'email' AND ";
+        }
+
+        if(typeof personTelecom !== 'undefined' && personTelecom !== ""){
+          if(personTelecom.indexOf('at_sign') > 0){
+            personTelecom = personTelecom.replace('at_sign', '@');  
+          }
+          condition += "(UPPER(contact_point_system) = '" + personTelecom.toUpperCase() + "' OR UPPER(contact_point_value) = '" + personTelecom.toUpperCase() + "' OR UPPER(contact_point_use) = '" + personTelecom.toUpperCase() + "') AND ";       
+        }
+
+        if(typeof personPhone !== 'undefined' && personPhone !== ""){
+          condition += "UPPER(contact_point_value) = '" + personPhone.toUpperCase() + "' AND contact_point_system = 'phone' AND ";
+        }
+      }
+
+      if((typeof personName !== 'undefined' && personName !== "") || (typeof personPhonetic !== 'undefined' && personPhonetic !== "")){
+        join += " LEFT JOIN BACIRO_FHIR.HUMAN_NAME hn ON hn.person_id = p.person_id ";
+
+        if(typeof personName !== 'undefined' && personName !== ""){
+          if(personName.indexOf('nonbreaking_space') > 0){
+            personName = personName.replace(/nonbreaking_space/g, " ");
+          }
+
+          condition += "(UPPER(human_name_text) LIKE '%" + personName.toUpperCase() + "%' OR UPPER(human_name_prefix) LIKE '%" + personName.toUpperCase() + "%' OR UPPER(human_name_suffix) LIKE '%" + personName.toUpperCase() + "%') AND ";       
+        }
+
+        // if(typeof personPhonetic !== 'undefined' && personPhonetic !== ""){
+        //   condition += "(UPPER(human_name_given) = '" + patientPhonetic.toUpperCase() + "' OR UPPER(human_name_family) = '" + patientPhonetic.toUpperCase() + "') AND ";       
+        // }
+      }
+
+      if((typeof personIdentifier !== 'undefined' && personIdentifier !== "")){
+        join += " LEFT JOIN BACIRO_FHIR.IDENTIFIER i ON i.person_id = p.person_id ";
+        
+        if(typeof personIdentifier !== 'undefined' && personIdentifier !== ""){
+          condition += "identifier_value = '" + personIdentifier + "' AND ";       
+        }
+      }
+
+      if((typeof personLink !== 'undefined' && personLink !== "") || (typeof personPatient !== 'undefined' && personPatient !== "") || (typeof personPractitioner !== 'undefined' && personPractitioner !== "") || (typeof personRelatedPerson !== 'undefined' && personRelatedPerson !== "")){
+        join += " LEFT JOIN BACIRO_FHIR.PERSON_LINK pl ON pl.person_id = p.person_id ";
+        
+        if(typeof personLink !== 'undefined' && personLink !== ""){
+          condition += "(person_link_target_patient = '" + personLink + "' OR person_link_target_practitioner = '" + personLink + "' OR person_link_target_related_person = '" + personLink + "' OR person_link_target_person = '" + personLink + "' ) AND ";       
+        }
+
+        if(typeof personPatient !== 'undefined' && personPatient !== ""){
+          condition += "person_link_target_patient = '" + personPatient + "' AND ";  
+        }
+
+        if(typeof personPractitioner !== 'undefined' && personPractitioner !== ""){
+          condition += "person_link_target_practitioner = '" + personPractitioner + "' AND ";  
+        }
+
+        if(typeof personRelatedPerson !== 'undefined' && personRelatedPerson !== ""){
+          condition += "person_link_target_related_person = '" + personRelatedPerson + "' AND ";  
+        }
       }
 
       if(condition == ""){
         fixCondition = "";
       }else{
-        fixCondition = " WHERE " + condition.slice(0, -4);
+        fixCondition = join +" WHERE  "+ condition.slice(0, -4);
       }
       
       var arrPerson = [];
-      var query = "SELECT person_id, person_gender, person_birthdate, person_active, org.organization_id, attachment_id FROM BACIRO_FHIR.PERSON p LEFT JOIN BACIRO_FHIR.ORGANIZATION org on p.organization_id = org.organization_id " + fixCondition; //join ke organization
+      var query = "SELECT p.person_id as person_id, person_gender, person_birthdate, person_active, org.organization_id, attachment_id FROM BACIRO_FHIR.PERSON p LEFT JOIN BACIRO_FHIR.ORGANIZATION org on p.organization_id = org.organization_id " + fixCondition; //join ke organization
+
       db.query(query,function(dataJson){
         rez = lowercaseObject(dataJson);
         for(i = 0; i < rez.length; i++){
@@ -96,7 +237,7 @@ var controller = {
           }else if(rez[i].person_link_target_practitioner != null){
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner/' +  rez[i].person_link_target_practitioner;
           }else if(rez[i].person_link_target_related_person != null){
-            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson/' +  rez[i].person_link_target_related_person;
+            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/person/' +  rez[i].person_link_target_related_person;
           }else{
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person/' +  rez[i].person_link_target_person;
           }
@@ -143,7 +284,7 @@ var controller = {
       var person_link_id = req.body.id;
       var patientId = req.body.patient_id;
       var practitionerId = req.body.practitioner_id;
-      var relatedPersonId = req.body.related_person_id;
+      var personId = req.body.person_id;
       var personId = req.body.person_id;
       var personId2 = req.body.person_id2;
       var assurance= req.body.assurance;
@@ -162,9 +303,9 @@ var controller = {
         values += "'"+ practitionerId +"',";
       }
 
-      if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
+      if(typeof personId !== 'undefined' && personId !== ""){
         column += 'person_link_target_related_person,';
-        values += "'"+ relatedPersonId +"',";
+        values += "'"+ personId +"',";
       }
 
       if(typeof personId2 !== 'undefined' && personId2 !== "" ){

@@ -9,10 +9,9 @@ var configYaml = yamlconfig.readConfig('../config/config.yml');
 var host = configYaml.phoenix.host;
 var port = configYaml.phoenix.port;
 
-// var phoenix = require("./phoenix.js");
 var phoenix = require("./phoenix.js");
-// var db = new phoenix("jdbc:phoenix:" + host + ":/hbase-unsecure");
-var db = new phoenix("jdbc:phoenix:" + "192.168.1.231" + ":/hbase-unsecure");
+var db = new phoenix("jdbc:phoenix:" + host + ":/hbase-unsecure");
+
 //setting midleware
 app.use (function(req,res,next){
   res.header("Access-Control-Allow-Origin", "*");
@@ -690,82 +689,6 @@ var Phoenix = {
             res.json({"err_code":0,"data":rez});
           },function(e){
             res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "viewJar"});
-          });
-        },
-        checkId: function getCheckId(req, res){
-          var id = req.params.id;
-          var name = req.params.name;
-          var condition = '';
-
-          var query = "SELECT id FROM BACIRO_FHIR." + name + " WHERE id = " + id;
-
-          db.query(query,function(dataJson){
-            rez = lowercaseObject(dataJson);
-            res.json({"err_code":0,"data":rez});
-          },function(e){
-            res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "getCheckId"});
-          });
-        },
-        checkCode: function getCheckCode(req, res){
-          var code = req.params.code;
-          var name = req.params.name;
-          var condition = '';
-
-          var query = "SELECT id FROM BACIRO_FHIR." + name + " WHERE code = '" + code + "' ";
-          console.log(query)
-          db.query(query,function(dataJson){
-            rez = lowercaseObject(dataJson);
-            res.json({"err_code":0,"data":rez});
-          },function(e){
-            res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "getCheckCode"});
-          });
-        },
-        checkUniqeValue: function getCheckUniqeValue(req, res){
-          var fdvalue = req.params.fdvalue;
-          var tbname = req.params.tbname;
-          var condition = '';
-
-          arrValue = fdvalue.split('|');
-          field = arrValue[0];
-          values = arrValue[1];
-
-          var query = "SELECT " + field + " FROM BACIRO_FHIR." + tbname + " WHERE " + field + " = '" + values + "'" ;
-          
-          db.query(query,function(dataJson){
-            rez = lowercaseObject(dataJson);
-            res.json({"err_code":0,"data":rez});
-          },function(e){
-            res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "getCheckUniqeValue"});
-          });
-        },
-        checkGroupQuota: function getCheckGroupQuota(req, res){
-          var group_id = req.params.group_id;
-
-          var query = "SELECT COUNT(*) total_member, g.group_quantity quantity from BACIRO_FHIR.GROUP_MEMBER gm left join BACIRO_FHIR.GROUP_ g ON g.group_id = gm.group_id WHERE gm.group_id = '"+ group_id +"' GROUP BY g.group_quantity";
-          
-          db.query(query,function(dataJson){
-            rez = lowercaseObject(dataJson);
-            res.json({"err_code":0,"data":rez});
-          },function(e){
-            res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "getCheckGroupQuota"});
-          });
-        },
-        checkMemberEntityGroup: function getCheckMemberEntityGroup(req, res){
-          var group_id = req.params.group_id;
-          var entity = req.params.entity_id;
-          
-          arrEntity = entity.split('|');
-          field = arrEntity[0];
-          value = arrEntity[1];
-          condition = field + " = '" + value + "'";
-
-          var query = "SELECT group_member_id from BACIRO_FHIR.GROUP_MEMBER WHERE " + condition + " AND group_id = '"+ group_id +"' ";
-          
-          db.query(query,function(dataJson){
-            rez = lowercaseObject(dataJson);
-            res.json({"err_code":0,"data":rez});
-          },function(e){
-            res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "getCheckGroupQuota"});
           });
         }
 			},
@@ -1622,15 +1545,6 @@ app.get('/:apikey/project_inventory_by_user/:user_id?', Phoenix.get.project_inve
 app.get('/:apikey/get_job_id_from_db/:user_id', Phoenix.get.get_job_id_from_db);
 app.get('/:apikey/get_project_job_history/project/:project_id', Phoenix.get.get_project_job_history);
 
-//fhir247
-app.get('/:apikey/check-id/:id/:name', Phoenix.get.checkId);
-app.get('/:apikey/check-code/:code/:name', Phoenix.get.checkCode);
-app.get('/:apikey/check-uniqevalue/:fdvalue/:tbname', Phoenix.get.checkUniqeValue);
-app.get('/:apikey/check-groupqouta/:group_id', Phoenix.get.checkGroupQuota);
-app.get('/:apikey/check-memberentitygroup/:entity_id/:group_id', Phoenix.get.checkMemberEntityGroup);
-
-
-
 //post method
 app.post('/:apikey/user', Phoenix.post.user);
 app.post('/:apikey/group', Phoenix.post.group);
@@ -1645,7 +1559,6 @@ app.post('/:apikey/login', Phoenix.post.login);
 app.post('/:apikey/compile', Phoenix.post.compile);
 app.post('/:apikey/job', Phoenix.post.job);
 
-
 //put method
 app.put('/:apikey/user/:user_id?', Phoenix.put.user);
 app.put('/:apikey/group/:group_id?', Phoenix.put.group);
@@ -1659,7 +1572,6 @@ app.put('/:apikey/cluster/:cluster_id?/config/:config_id', Phoenix.put.cluster_c
 app.put('/:apikey/job/:oozie_job_id', Phoenix.put.job);
 app.put('/:apikey/default_config', Phoenix.put.default_config);
 
-
 //delete method
 app.delete('/:apikey/user/:user_id?', Phoenix.delete.user);
 app.delete('/:apikey/group/:group_id?', Phoenix.delete.group);
@@ -1671,7 +1583,7 @@ app.delete('/:apikey/cluster/:cluster_id?', Phoenix.delete.cluster);
 app.delete('/:apikey/cluster/:cluster_id?/config/:config_id?', Phoenix.delete.cluster_config);
 
 
-//module fhir
+//fhir247
 //import patient_registers module
 var DefaultFHIR = require("./default_fhir/controller");
 var Person = require("./patient_registers/person/controller");
@@ -1692,7 +1604,7 @@ routesPerson(app, Person);
 routesPatient(app, Patient);
 routesRelatedPerson(app, RelatedPerson);
 routesGroup(app, Group);
-
+//end fhir247
 
 var server = app.listen(port, host, function () {
   console.log("Server running at http://%s:%s", host, port);

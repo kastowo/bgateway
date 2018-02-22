@@ -19,22 +19,86 @@ var controller = {
 	get: {
     group: function getGroup(req, res){
       var groupId = req.query._id;
+      var groupActual = req.query.actual;
+      var groupCharacteristic = req.query.characteristic;
+      var groupCharacteristicValue = req.query.characteristicvalue;
+      var groupCode = req.query.code;
+      var groupExclude = req.query.exclude;
+      var groupMember = req.query.member;
+      var groupType = req.query.type;
+      var groupValue = req.query.value;
+
       //susun query
       var condition = "";
+      var join = "";
 
       if(typeof groupId !== 'undefined' && groupId !== ""){
-        condition += "group_id = '" + groupId + "' AND,";  
+        condition += "g.group_id = '" + groupId + "' AND,";  
       }
+
+      if(typeof groupActual !== 'undefined' && groupActual !== ""){
+        condition += "group_actual = " + groupActual + " AND,";  
+      }
+
+      if(typeof groupCode !== 'undefined' && groupCode !== ""){
+        condition += "upper(group_code) = '" + groupCode.toUpperCase() + "' AND,";  
+      }
+
+      if(typeof groupType !== 'undefined' && groupType !== ""){
+        condition += "upper(group_type) = '" + groupType.toUpperCase() + "' AND,";  
+      }
+
+      if((typeof groupCharacteristic !== 'undefined' && groupCharacteristic !== "") || (typeof groupCharacteristicValue !== 'undefined' && groupCharacteristicValue !== "") || (typeof groupExclude !== 'undefined' && groupExclude !== "") || (typeof groupValue !== 'undefined' && groupValue !== "")){
+        join += " LEFT JOIN BACIRO_FHIR.GROUP_CHARACTERISTIC gc ON gc.group_id = g.group_id ";
+        
+        if(typeof groupCharacteristic !== 'undefined' && groupCharacteristic !== ""){
+          condition += "upper(group_characteristic_code) = '" + groupCharacteristic.toUpperCase() + "' AND ";       
+        }
+
+        if(typeof groupValue !== 'undefined' && groupValue !== ""){
+          if(groupValue.indexOf('nonbreaking_space') > 0){
+            groupValue = groupValue.replace(/nonbreaking_space/g, " ");
+          }
+          condition += "upper(group_characteristic_value) = '" + groupValue.toUpperCase() + "' AND ";       
+        }
+
+        if(typeof groupCharacteristicValue !== 'undefined' && groupCharacteristicValue !== ""){
+          if(groupCharacteristicValue.indexOf('nonbreaking_space') > 0){
+            groupCharacteristicValue = groupCharacteristicValue.replace(/nonbreaking_space/g, " ");
+          }
+          condition += "(upper(group_characteristic_code) = '" + groupCharacteristicValue.toUpperCase() + "' OR upper(group_characteristic_value) = '" + groupCharacteristicValue.toUpperCase() + "') AND ";
+        }
+
+        if(typeof groupExclude !== 'undefined' && groupExclude !== ""){
+          condition += "group_characteristic_exclude = " + groupExclude + " AND ";
+        }
+      }
+
+      if((typeof groupMember !== 'undefined' && groupMember !== "")){
+        join += " LEFT JOIN BACIRO_FHIR.GROUP_MEMBER gm ON gm.group_id = g.group_id ";
+        
+        if(typeof groupMember !== 'undefined' && groupMember !== ""){
+          condition += "(group_member_entity_patient_id = '" + groupMember + "' OR group_member_entity_practitioner_id = '" + groupMember + "' OR group_member_entity_device_id = '" + groupMember + "' OR group_member_entity_medication_id = '" + groupMember + "' OR group_member_entity_substance_id = '" + groupMember + "' ) AND ";       
+        }
+      }
+
+      // if((typeof personIdentifier !== 'undefined' && personIdentifier !== "")){
+      //   join += " LEFT JOIN BACIRO_FHIR.IDENTIFIER i ON i.person_id = p.person_id ";
+        
+      //   if(typeof personIdentifier !== 'undefined' && personIdentifier !== ""){
+      //     condition += "identifier_value = '" + personIdentifier + "' AND ";       
+      //   }
+      // }
 
       if(condition == ""){
         fixCondition = "";
       }else{
-        fixCondition = " WHERE " + condition.slice(0, -4);
+        fixCondition = join +" WHERE  "+ condition.slice(0, -4);
       }
       
       var arrGroup = [];
-      var query = "SELECT group_id, group_active, group_type, group_actual, group_code, group_name, group_quantity FROM BACIRO_FHIR.GROUP_ " + fixCondition;
-      
+      var query = "SELECT g.group_id as group_id, group_active, group_type, group_actual, group_code, group_name, group_quantity FROM BACIRO_FHIR.GROUP_ g" + fixCondition;
+      console.log(query)
       db.query(query,function(dataJson){
         rez = lowercaseObject(dataJson);
         for(i = 0; i < rez.length; i++){

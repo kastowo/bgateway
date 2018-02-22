@@ -37,24 +37,14 @@ var controller = {
 
 		//params from query string
 		var groupId = req.query._id;
-		var address = req.query.address;
-		var addressCity = req.query.addresscity;
-		var addressCountry = req.query.addresscountry;
-		var addressPostalcode = req.query.addresspostalcode;
-		var addressState = req.query.addressstate;
-		var addressUse = req.query.addressuse;
-		var birthdate = req.query.birthdate;
-		var email = req.query.email;
-		var gender = req.query.gender;
-		var link = req.query.link;
-		var name = req.query.name;
-		var organization = req.query.organization;
-		var patient = req.query.patient;
-		var phone = req.query.phone;
-		var phonetic = req.query.phonetic;
-		var practitioner = req.query.practitioner;
-		var relatedperson = req.query.relatedperson;
-		var telecom = req.query.telecom;
+		var groupActual = req.query.actual;
+		var groupCharacteristic = req.query.characteristic;
+		var groupCharacteristicValue = req.query.characteristic_value;
+		var groupCode = req.query.code;
+		var groupExclude = req.query.exclude;
+		var groupMember = req.query.member;
+		var groupType = req.query.type;
+		var groupValue = req.query.value;
 
 
 		var qString = {};
@@ -66,6 +56,79 @@ var controller = {
 			}
 		}
 
+		if(typeof groupActual !== 'undefined'){
+			if(validator.isBoolean(groupActual)){
+				qString.actual = groupActual; 
+			}else{
+				res.json({"err_code": 1, "err_msg": "Actual is boolean."});
+			}
+		}
+
+		if(typeof groupCharacteristic !== 'undefined'){
+			if(!validator.isEmpty(groupCharacteristic)){
+				qString.characteristic = groupCharacteristic; 
+			}else{
+				res.json({"err_code": 1, "err_msg": "Characteristic is empty."});
+			}
+		}
+
+		if(typeof groupCharacteristicValue !== 'undefined'){
+			if(!validator.isEmpty(groupCharacteristicValue)){
+				if(groupCharacteristicValue.indexOf(" ") > 0){
+					qString.characteristicvalue = groupCharacteristicValue.replace(/ /g, "nonbreaking_space"); 
+				}else{
+					qString.characteristicvalue = groupCharacteristicValue; 	
+				} 
+			}else{
+				res.json({"err_code": 1, "err_msg": "Characteristic value is empty."});
+			}
+		}
+
+		if(typeof groupValue !== 'undefined'){
+			if(!validator.isEmpty(groupValue)){
+				if(groupValue.indexOf(" ") > 0){
+					qString.value = groupValue.replace(/ /g, "nonbreaking_space"); 
+				}else{
+					qString.value = groupValue; 	
+				} 
+			}else{
+				res.json({"err_code": 1, "err_msg": "Value is empty."});
+			}
+		}
+
+		if(typeof groupCode !== 'undefined'){
+			if(!validator.isEmpty(groupCode)){
+				qString.code = groupCode; 
+			}else{
+				res.json({"err_code": 1, "err_msg": "Code is empty."});
+			}
+		}
+
+		if(typeof groupExclude !== 'undefined'){
+			if(validator.isBoolean(groupExclude)){
+				qString.exclude = groupExclude; 
+			}else{
+				res.json({"err_code": 1, "err_msg": "Exclude is boolean."});
+			}
+		}
+
+		if(typeof groupMember !== 'undefined'){
+			if(!validator.isEmpty(groupMember)){
+				qString.member = groupMember; 
+			}else{
+				res.json({"err_code": 1, "err_msg": "Member is empty."});
+			}
+		}
+
+		if(typeof groupType !== 'undefined'){
+			if(!validator.isEmpty(groupType)){
+				qString.type = groupType; 
+			}else{
+				res.json({"err_code": 1, "err_msg": "Member is empty."});
+			}
+		}
+
+		console.log(qString)
 		seedPhoenixFHIR.path.GET = {
 			"Group" : {
 				"location": "%(apikey)s/Group_",

@@ -35,27 +35,29 @@ var controller = {
 			get: function getPerson(req, res){
 				var ipAddres = req.connection.remoteAddress;
 				var apikey = req.params.apikey;
+				var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
 
 				//params from query string
 				var personId = req.query._id;
-				var address = req.query.address;
-				var addressCity = req.query.addresscity;
-				var addressCountry = req.query.addresscountry;
-				var addressPostalcode = req.query.addresspostalcode;
-				var addressState = req.query.addressstate;
-				var addressUse = req.query.addressuse;
-				var birthdate = req.query.birthdate;
-				var email = req.query.email;
-				var gender = req.query.gender;
-				var link = req.query.link;
-				var name = req.query.name;
-				var organization = req.query.organization;
-				var patient = req.query.patient;
-				var phone = req.query.phone;
-				var phonetic = req.query.phonetic;
-				var practitioner = req.query.practitioner;
-				var relatedperson = req.query.relatedperson;
-				var telecom = req.query.telecom;
+				var personAddress = req.query.address;
+				var personAddressCity = req.query.city;
+				var personAddressCountry = req.query.country;
+				var personAddressPostalcode = req.query.postal_code;
+				var personAddressState = req.query.state;
+				var personAddressUse = req.query.address_use;
+				var personBirthdate = req.query.birthdate;
+				var personEmail = req.query.email;
+				var personGender = req.query.gender;
+				var personIdentifier = req.query.identifier;
+				var personLink = req.query.link;
+				var personName = req.query.name;
+				var personOrganization = req.query.organization;
+				var personPatient = req.query.patient;
+				var personPhone = req.query.phone;
+				var personPhonetic = req.query.phonetic;
+				var personPractitioner = req.query.practitioner;
+				var personRelatedPerson = req.query.related_person;
+				var personTelecom = req.query.telecom;
 
 
 				var qString = {};
@@ -67,6 +69,193 @@ var controller = {
 					}
 				}
 
+				if(typeof personAddress !== 'undefined'){
+					if(!validator.isEmpty(personAddress)){
+						personAddress = decodeURI(personAddress);
+						if(personAddress.indexOf(" ") > 0){
+							qString.address = personAddress.replace(/ /g, "nonbreaking_space"); 
+						}else{
+							qString.address = personAddress; 	
+						}
+					}else{
+						res.json({"err_code": 1, "err_msg": "Address is empty."});
+					}
+				}
+
+				if(typeof personAddressCity !== 'undefined'){
+					if(!validator.isEmpty(personAddressCity)){
+						personAddressCity = decodeURI(personAddressCity);
+						if(personAddressCity.indexOf(" ") > 0){
+							qString.city = personAddressCity.replace(/ /g, "nonbreaking_space"); 
+						}else{
+							qString.city = personAddressCity; 
+						}
+					}else{
+						res.json({"err_code": 1, "err_msg": "City is empty."});
+					}
+				}
+
+				if(typeof personAddressCountry !== 'undefined'){
+					if(!validator.isEmpty(personAddressCountry)){
+						personAddressCountry = decodeURI(personAddressCountry);
+						if(personAddressCountry.indexOf(" ") > 0){
+							personAddressCountry = personAddressCountry.replace(/ /g, "nonbreaking_space"); 
+						}
+							qString.country = personAddressCountry; 
+												
+					}else{
+						res.json({"err_code": 1, "err_msg": "Country is empty."});
+					}
+				}
+
+				if(typeof personAddressPostalcode !== 'undefined'){
+					if(validator.isPostalCode(personAddressPostalcode, 'any')){
+						if(personAddressPostalcode.indexOf(" ") > 0){
+							personAddressPostalcode = personAddressPostalcode.replace(/ /g, ""); 
+						}
+						qString.postalcode = personAddressPostalcode; 
+					}else{
+						res.json({"err_code": 1, "err_msg": "Postal code is invalid format."});
+					}
+				}
+
+				if(typeof personAddressState !== 'undefined'){
+					if(!validator.isEmpty(personAddressState)){
+						personAddressState = decodeURI(personAddressState);
+						if(personAddressState.indexOf(" ") > 0){
+							qString.state = personAddressState.replace(/ /g, "nonbreaking_space"); 
+						}else{
+							qString.state = personAddressState; 
+						}
+					}else{
+						res.json({"err_code": 1, "err_msg": "State is empty."});
+					}
+				}
+
+				if(typeof personAddressUse !== 'undefined'){
+					if(!validator.isEmpty(personAddressUse)){
+						qString.addressuse = personAddressUse; 
+					}else{
+						res.json({"err_code": 1, "err_msg": "Address use code is empty."});
+					}
+				}
+
+				if(typeof personBirthdate !== 'undefined'){
+					if(!validator.isEmpty(personBirthdate)){
+						if(!regex.test(personBirthdate)){
+							res.json({"err_code": 1, "err_msg": "Birthdate invalid format."});
+						}else{
+							qString.birthdate = personBirthdate; 
+						}	
+					}else{
+						res.json({"err_code": 1, "err_msg": "Birthdate is empty."});
+					}
+				}
+
+				if(typeof personEmail !== 'undefined'){
+					if(validator.isEmail(personEmail)){
+						qString.email = personEmail.replace(/@/g, "at_sign"); 
+					}else{
+						res.json({"err_code": 1, "err_msg": "Email is empty."});
+					}
+				}
+
+				if(typeof personGender !== 'undefined'){
+					if(!validator.isEmpty(personGender)){
+						qString.gender = personGender;
+					}else{
+						res.json({"err_code": 1, "err_msg": "Gender is empty."});
+					}
+				}
+
+				if(typeof personIdentifier !== 'undefined'){
+					if(!validator.isEmpty(personIdentifier)){
+						qString.identifier = personIdentifier;
+					}else{
+						res.json({"err_code": 1, "err_msg": "Identifier is empty."});
+					}
+				}
+
+				if(typeof personLink !== 'undefined'){
+					if(!validator.isEmpty(personLink)){
+						qString.link = personLink;
+					}else{
+						res.json({"err_code": 1, "err_msg": "Link is empty."});
+					}
+				}
+
+				if(typeof personName !== 'undefined'){
+					if(!validator.isEmpty(personName)){
+						if(personName.indexOf(" ") > 0){
+							qString.name = personName.replace(/ /g, "nonbreaking_space"); 
+						}else{
+							qString.name = personName;
+						}
+					}else{
+						res.json({"err_code": 1, "err_msg": "Name is empty."});
+					}
+				}
+
+				if(typeof personOrganization !== 'undefined'){
+					if(!validator.isEmpty(personOrganization)){
+						qString.organization = personOrganization;
+					}else{
+						res.json({"err_code": 1, "err_msg": "Organization is empty."});
+					}	
+				}
+
+				if(typeof personPatient !== 'undefined'){
+					if(!validator.isEmpty(personPatient)){
+						qString.patient = personPatient;
+					}else{
+						res.json({"err_code": 1, "err_msg": "Patient is empty."});
+					}
+				}
+
+				if(typeof personPhone !== 'undefined'){
+					if(validator.isMobilePhone(personPhone, 'any')){
+						qString.phone = personPhone;
+					}else{
+						res.json({"err_code": 1, "err_msg": "Invalid format phone."});
+					}
+				}
+
+				if(typeof personPhonetic !== 'undefined'){
+					if(!validator.isEmpty(personPhonetic)){
+						qString.phonetic = personPhonetic;
+					}else{
+						res.json({"err_code": 1, "err_msg": "Phonetic is empty."});
+					}
+				}
+
+				if(typeof personPractitioner !== 'undefined'){
+					if(!validator.isEmpty(personPractitioner)){
+						qString.practitioner = personPractitioner;
+					}else{
+						res.json({"err_code": 1, "err_msg": "Practitioner is empty."});
+					}
+				}
+
+				if(typeof personRelatedPerson !== 'undefined'){
+					if(!validator.isEmpty(personRelatedPerson)){
+						qString.relatedperson = personRelatedPerson;
+					}else{
+						res.json({"err_code": 1, "err_msg": "Practitioner is empty."});
+					}
+				}
+
+				if(typeof personTelecom !== 'undefined'){
+					if(!validator.isEmpty(personTelecom)){
+						if(validator.isEmail(personTelecom)){
+							qString.telecom = personTelecom.replace(/@/g, "at_sign"); 
+						}else{
+							qString.telecom = personTelecom; 
+						}
+					}else{
+						res.json({"err_code": 1, "err_msg": "Telecom is empty."});
+					}
+				}
+				
 				seedPhoenixFHIR.path.GET = {
 					"Person" : {
 						"location": "%(apikey)s/Person",
