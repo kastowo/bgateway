@@ -293,6 +293,15 @@
          },
          "identifier":{
             "location": "%(apikey)s/identifier/%(_id)s/%(dr)s"
+         },
+         "humanName":{
+            "location": "%(apikey)s/human-name/%(_id)s/%(dr)s"
+         },
+         "contactPoint":{
+            "location": "%(apikey)s/contact-point/%(_id)s/%(dr)s"
+         },
+         "address":{
+            "location": "%(apikey)s/address/%(_id)s/%(dr)s"
          }
       }
    }

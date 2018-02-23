@@ -2312,6 +2312,9 @@ var controller = {
 								err_code = 2;
 								err_msg = "Identifier Period invalid date format.";
 							}	
+						}else{
+							err_code = 1;
+							err_msg = "Identifier Period format is wrong, `ex: start to end` ";
 						}
 					}else{
 						err_code = 1;
@@ -2473,11 +2476,11 @@ var controller = {
 							
 							if(!regex.test(humanNamePeriodStart) && !regex.test(humanNamePeriodEnd)){
 								err_code = 2;
-								err_msg = "Identifier Period invalid date format.";
+								err_msg = "HumanName Period invalid date format.";
 							}	
 						}else{
-							humanNamePeriodStart = "";
-							humanNamePeriodEnd = "";
+							err_code = 1;
+							err_msg = "HumanName Period request format is wrong, `ex: start to end` ";
 						}
 					}else{
 						humanNamePeriodStart = "";
@@ -2488,34 +2491,396 @@ var controller = {
 						//check apikey
 						checkApikey(apikey, ipAddres, function(result){
 							if(result.err_code == 0){	
-								checkCode(apikey, humanNameUseCode, 'NAME_USE', function(resNameUseCode){
-									if(resNameUseCode.err_code > 0){
-										var humanNameId = 'hn' + uniqid.time();
-										dataHumanName = {
-			  													"id": humanNameId,
-			  													"use": humanNameUseCode,
-			  													"text": humanNamePrefix +' '+ humanNameText +' '+ humanNameSuffix,
-			  													"family": humanNameFamily,
-			  													"given": humanNameGiven,
-			  													"prefix": humanNamePrefix,
-			  													"suffix": humanNameSuffix,
-			  													"period_start": humanNamePeriodStart,
-			  													"period_end": humanNamePeriodEnd,
-			  													"patient_id": patientId
-			  												}
+								checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+									if(resPatientID.err_code > 0){
+										checkCode(apikey, humanNameUseCode, 'NAME_USE', function(resNameUseCode){
+											if(resNameUseCode.err_code > 0){
+												var humanNameId = 'hn' + uniqid.time();
+												dataHumanName = {
+					  													"id": humanNameId,
+					  													"use": humanNameUseCode,
+					  													"text": humanNamePrefix +' '+ humanNameText +' '+ humanNameSuffix,
+					  													"family": humanNameFamily,
+					  													"given": humanNameGiven,
+					  													"prefix": humanNamePrefix,
+					  													"suffix": humanNameSuffix,
+					  													"period_start": humanNamePeriodStart,
+					  													"period_end": humanNamePeriodEnd,
+					  													"patient_id": patientId
+					  												}
 
-					  				ApiFHIR.post('humanName', {"apikey": apikey}, {body: dataHumanName, json: true}, function(error, response, body){
-					  					humanName = body;
-					  					if(humanName.err_code == 0){
-					  						res.json({"err_code": 0, "err_msg": "Human Name has been add in this patient.", "data": humanName.data});
-					  					}else{
-					  						res.json(humanName);	
-					  					}
-					  				})
+							  				ApiFHIR.post('humanName', {"apikey": apikey}, {body: dataHumanName, json: true}, function(error, response, body){
+							  					humanName = body;
+							  					if(humanName.err_code == 0){
+							  						res.json({"err_code": 0, "err_msg": "Human Name has been add in this patient.", "data": humanName.data});
+							  					}else{
+							  						res.json(humanName);	
+							  					}
+							  				})
+											}else{
+												res.json({"err_code": 501, "err_msg": "Name use code not found"});		
+											}
+										})
 									}else{
-										res.json({"err_code": 501, "err_msg": "Name use code not found"});		
+										res.json({"err_code": 503, "err_msg": "Patient Id not found"});		
 									}
 								})
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
+				},
+				telecom: function addTelecom(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+
+					var err_code = 0;
+					var err_msg = "";
+
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					//telecom
+					if(typeof req.body.system !== 'undefined'){
+						contactPointSystemCode =  req.body.system.trim().toLowerCase();
+						if(validator.isEmpty(contactPointSystemCode)){
+							err_code = 2;
+							err_msg = "Contact Point System is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'system' in json request.";
+					}
+
+					//telecom value
+					if(typeof req.body.value !== 'undefined'){
+						contactPointValue =  req.body.value;
+						if(contactPointSystemCode == 'email'){
+							if(!validator.isEmail(contactPointValue)){
+								err_code = 2;
+								err_msg = "Contact Point Value is invalid email format";
+							}
+						}else{
+							if(validator.isEmpty(contactPointValue)){
+								err_code = 2;
+								err_msg = "Contact Point Value is required";
+							}
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'value' in json request.";
+					}
+
+					//telecom use code
+					if(typeof req.body.use !== 'undefined'){
+						contactPointUseCode =  req.body.use.trim().toLowerCase();
+						if(validator.isEmpty(contactPointUseCode)){
+							err_code = 2;
+							err_msg = "Telecom Use Code is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'use' in json request.";
+					} 
+
+					//contact poin rank
+					if(typeof req.body.rank !== 'undefined'){
+						contactPointRank =  req.body.rank;
+						if(!validator.isInt(contactPointRank)){
+							err_code = 2;
+							err_msg = "Telecom Rank must be number";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'rank' in json request.";
+					} 
+
+					//contact point period
+					if(typeof req.body.period !== 'undefined'){
+						var period = req.body.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							contactPointPeriodStart = arrPeriod[0];
+							contactPointPeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(contactPointPeriodStart) && !regex.test(contactPointPeriodEnd)){
+								err_code = 2;
+								err_msg = "Telecom Period invalid date format.";
+							}	
+						}else{
+							err_code = 1;
+							err_msg = "Telecom Period request format is wrong, `ex: start to end` ";
+						}
+					}else{
+						contactPointPeriodStart = "";
+						contactPointPeriodEnd = "";
+					}
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+									if(resPatientID.err_code > 0){
+										checkCode(apikey, contactPointSystemCode, 'CONTACT_POINT_SYSTEM', function(resContactPointSystem){
+											if(resContactPointSystem.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+												checkCode(apikey, contactPointUseCode, 'CONTACT_POINT_USE', function(resContactPointUse){
+													if(resContactPointUse.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+														checkUniqeValue(apikey, "CONTACT_POINT_VALUE|" + contactPointValue, 'CONTACT_POINT', function(resContactPointValue){
+															if(resContactPointValue.err_code == 0){
+																//contact_point
+																var contactPointId = 'cp' + uniqid.time();
+											  				dataContactPoint = {
+											  														"id": contactPointId,
+											  														"system": contactPointSystemCode,
+											  														"value": contactPointValue,
+											  														"use": contactPointUseCode,
+											  														"rank": contactPointRank,
+											  														"period_start": contactPointPeriodStart,
+											  														"period_end": contactPointPeriodEnd,
+											  														"patient_id": patientId
+											  													}
+
+											  				ApiFHIR.post('contactPoint', {"apikey": apikey}, {body: dataContactPoint, json: true}, function(error, response, body){
+											  					contactPoint = body;
+											  					if(contactPoint.err_code == 0){
+											  						res.json({"err_code": 0, "err_msg": "Telecom has been add in this patient.", "data": contactPoint.data});
+											  					}else{
+											  						res.json(contactPoint);	
+											  					}
+											  				})
+															}else{
+																res.json({"err_code": 501, "err_msg": "Telecom value already exist."});			
+															}
+														})	
+													}else{
+														res.json({"err_code": 504, "err_msg": "Contact Point Use Code not found"});
+													}
+												})
+											}else{
+												res.json({"err_code": 504, "err_msg": "Contact Point System Code not found"});		
+											}
+										})
+									}else{
+										res.json({"err_code": 503, "err_msg": "Patient Id not found"});	
+									}
+								})	
+								
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
+				},
+				address: function addAddress(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+
+					var err_code = 0;
+					var err_msg = "";
+
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					//address use
+					if(typeof req.body.use !== 'undefined'){
+						addressUseCode =  req.body.use.trim().toLowerCase();
+						if(validator.isEmpty(addressUseCode)){
+							err_code = 2;
+							err_msg = "Address Use is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'use' in json request.";
+					} 
+
+					//address type
+					if(typeof req.body.type !== 'undefined'){
+						addressTypeCode =  req.body.type.trim().toLowerCase();
+						if(validator.isEmpty(addressTypeCode)){
+							err_code = 2;
+							err_msg = "Address Type is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'type' in json request.";
+					} 
+
+					//address text
+					if(typeof req.body.text !== 'undefined'){
+						addressText =  req.body.text;
+						if(validator.isEmpty(addressText)){
+							err_code = 2;
+							err_msg = "Address Text is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'text' in json request.";
+					}
+
+					//address line
+					if(typeof req.body.line !== 'undefined'){
+						addressLine =  req.body.line;
+						if(validator.isEmpty(addressLine)){
+							err_code = 2;
+							err_msg = "Address Line is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'line' in json request.";
+					}
+
+					//address city
+					if(typeof req.body.city !== 'undefined'){
+						addressCity =  req.body.city;
+						if(validator.isEmpty(addressCity)){
+							err_code = 2;
+							err_msg = "Address City is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'city' in json request.";
+					} 
+
+					//address district
+					if(typeof req.body.district !== 'undefined'){
+						addressDistrict =  req.body.district;
+					}else{
+						addressDistrict = "";
+					}
+
+					//address state
+					if(typeof req.body.state !== 'undefined'){
+						addressState =  req.body.state;
+						if(validator.isEmpty(addressState)){
+							err_code = 2;
+							err_msg = "State is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'state' in json request.";
+					}
+
+					//address postal code
+					if(typeof req.body.postal_code !== 'undefined'){
+						addressPostalCode =  req.body.postal_code;
+						if(!validator.isPostalCode(addressPostalCode, 'any')){
+							err_code = 2;
+							err_msg = "Postal Code invalid format.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'postal_code' in json request.";
+					} 
+
+					//address country
+					if(typeof req.body.country !== 'undefined'){
+						addressCountry =  req.body.country;
+						if(validator.isEmpty(addressCountry)){
+							err_code = 2;
+							err_msg = "Country is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'country' in json request.";
+					} 
+
+					//address period
+					if(typeof req.body.period !== 'undefined'){
+						var period = req.body.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							addressPeriodStart = arrPeriod[0];
+							addressPeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(addressPeriodStart) && !regex.test(addressPeriodEnd)){
+								err_code = 2;
+								err_msg = "Address Period invalid date format.";
+							}	
+						}else{
+							err_code = 1;
+							err_msg = "Address Period request format is wrong, `ex: start to end` ";
+						}
+					}else{
+						addressPeriodStart = "";
+						addressPeriodEnd = "";
+					}
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+									if(resPatientID.err_code > 0){
+										checkCode(apikey, addressUseCode, 'ADDRESS_USE', function(resAddressUseCode){
+											if(resAddressUseCode.err_code > 0){
+												checkCode(apikey, addressTypeCode, 'ADDRESS_TYPE', function(resAddressTypeCode){
+													if(resAddressTypeCode.err_code > 0){
+														var addressId = 'add' + uniqid.time();
+														//address
+									  				dataAddress = {
+									  												"id": addressId,
+							  														"use": addressUseCode,
+							  														"type": addressTypeCode,
+							  														"text": addressText,
+							  														"line": addressLine,
+							  														"city": addressCity,
+							  														"district": addressDistrict,
+							  														"state": addressState,
+							  														"postal_code": addressPostalCode,
+							  														"country": addressCountry,
+							  														"period_start": addressPeriodStart,
+							  														"period_end": addressPeriodEnd,
+							  														"patient_id": patientId
+							  													}
+
+									  				ApiFHIR.post('address', {"apikey": apikey}, {body: dataAddress, json: true}, function(error, response, body){
+									  					address = body;
+									  					if(address.err_code == 0){
+									  						res.json({"err_code": 0, "err_msg": "Address has been add in this patient.", "data": address.data});
+									  					}else{
+									  						res.json(address);	
+									  					}
+									  				})
+													}else{
+														res.json({"err_code": 504, "err_msg": "Address Type Code not found"});
+													}
+												})
+											}else{
+												res.json({"err_code": 504, "err_msg": "Address Use Code not found"});
+											}
+										})
+									}else{
+										res.json({"err_code": 503, "err_msg": "Patient Id not found"});	
+									}
+								})	
 							}else{
 								result.err_code = 500;
 								res.json(result);
@@ -2738,6 +3103,8 @@ var controller = {
 						}else{
 							dataHumanName.use = humanNameUseCode;
 						}
+					}else{
+						humanNameUseCode = "";
 					} 
 
 					//fullname
@@ -2794,6 +3161,9 @@ var controller = {
 								dataHumanName.period_start = humanNamePeriodStart;
 								dataHumanName.period_end = humanNamePeriodEnd;
 							}	
+						}else{
+							err_code = 1;
+							err_msg = "HumanName Period request format is wrong, `ex: start to end` ";
 						}
 					} 
 
@@ -2827,6 +3197,385 @@ var controller = {
 										res.json({"err_code": 504, "err_msg": "Patient Id not found"});		
 									}
 								})								
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
+				},
+				telecom: function updateTelecom(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+					var contactPointId = req.params.contact_point_id;
+
+					var err_code = 0;
+					var err_msg = "";
+					var dataContactPoint = {};
+
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					//telecom
+					if(typeof req.body.system !== 'undefined'){
+						contactPointSystemCode =  req.body.system.trim().toLowerCase();
+						if(validator.isEmpty(contactPointSystemCode)){
+							err_code = 2;
+							err_msg = "Contact Point System is required";
+						}else{
+							dataContactPoint.system = contactPointSystemCode;
+						}
+					}else{
+						contactPointSystemCode = "";
+					}
+
+					//telecom value
+					if(typeof req.body.value !== 'undefined'){
+						contactPointValue =  req.body.value;
+						if(contactPointSystemCode == 'email'){
+							if(!validator.isEmail(contactPointValue)){
+								err_code = 2;
+								err_msg = "Contact Point Value is invalid email format";
+							}else{
+								dataContactPoint.value = contactPointValue;
+							}
+						}else{
+							if(validator.isEmpty(contactPointValue)){
+								err_code = 2;
+								err_msg = "Contact Point Value is required";
+							}else{
+								dataContactPoint.value = contactPointValue;
+							}
+						}
+					}else{
+						contactPointValue = "";
+					}
+
+					//telecom use code
+					if(typeof req.body.use !== 'undefined'){
+						contactPointUseCode =  req.body.use.trim().toLowerCase();
+						if(validator.isEmpty(contactPointUseCode)){
+							err_code = 2;
+							err_msg = "Telecom Use Code is required";
+						}else{
+							dataContactPoint.use = contactPointUseCode;
+						}
+					}else{
+						contactPointUseCode = "";
+					} 
+
+					//contact poin rank
+					if(typeof req.body.rank !== 'undefined'){
+						contactPointRank =  req.body.rank;
+						if(!validator.isInt(contactPointRank)){
+							err_code = 2;
+							err_msg = "Telecom Rank must be number";
+						}else{
+							dataContactPoint.rank = contactPointRank;
+						}
+					}
+
+					//contact point period
+					if(typeof req.body.period !== 'undefined'){
+						var period = req.body.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							contactPointPeriodStart = arrPeriod[0];
+							contactPointPeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(contactPointPeriodStart) && !regex.test(contactPointPeriodEnd)){
+								err_code = 2;
+								err_msg = "Telecom Period invalid date format.";
+							}else{
+								dataContactPoint.period_start = contactPointPeriodStart;
+								dataContactPoint.period_end = contactPointPeriodEnd;
+							}	
+						}else{
+							contactPointPeriodStart = "";
+							contactPointPeriodEnd = "";
+						}
+					} 
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								myEmitter.prependListener('checkPatientID', function(){
+									checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+										if(resPatientID.err_code > 0){
+											checkUniqeValue(apikey, "CONTACT_POINT_ID|" + contactPointId, 'CONTACT_POINT', function(resContactPointID){
+												if(resContactPointID.err_code > 0){
+													ApiFHIR.put('contactPoint', {"apikey": apikey, "_id": contactPointId, "dr": "PATIENT_ID|"+patientId}, {body: dataContactPoint, json: true}, function(error, response, body){
+								  					contactPoint = body;
+								  					if(contactPoint.err_code > 0){
+								  						res.json(contactPoint);	
+								  					}else{
+								  						res.json({"err_code": 0, "err_msg": "Telecom has been update in this patient.", "data": contactPoint.data});
+								  					}
+								  				})
+												}else{
+													res.json({"err_code": 505, "err_msg": "Telecom Id not found"});		
+												}
+											})
+										}else{
+											res.json({"err_code": 504, "err_msg": "Patient Id not found"});		
+										}
+									})
+								})
+
+								myEmitter.prependListener('checkContactPointValue', function(){
+									if(validator.isEmpty(contactPointValue)){
+										myEmitter.emit('checkPatientID');
+									}else{
+										checkUniqeValue(apikey, "CONTACT_POINT_VALUE|" + contactPointValue, 'CONTACT_POINT', function(resContactPointValue){
+											if(resContactPointValue.err_code == 0){
+												myEmitter.emit('checkPatientID');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Identifier value already exist."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkContactPointUse', function(){
+									if(validator.isEmpty(contactPointUseCode)){
+										myEmitter.emit('checkContactPointValue');
+									}else{
+										checkCode(apikey, contactPointUseCode, 'CONTACT_POINT_USE', function(resContactPointUse){
+											if(resContactPointUse.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+												myEmitter.emit('checkContactPointValue');
+											}else{
+												res.json({"err_code": 502, "err_msg": "Contact Point Use Code not found"});		
+											}
+										})
+									}
+								})
+
+								if(validator.isEmpty(contactPointSystemCode)){
+									myEmitter.emit('checkContactPointUse');	
+								}else{
+									checkCode(apikey, contactPointSystemCode, 'CONTACT_POINT_SYSTEM', function(resContactPointSystem){
+										if(resContactPointSystem.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+											myEmitter.emit('checkContactPointUse');
+										}else{
+											res.json({"err_code": 501, "err_msg": "Contact Point System Code not found"});
+										}
+									})
+								}
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
+				},
+				address: function updateAddress(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+					var addressId = req.params.address_id;
+
+					var err_code = 0;
+					var err_msg = "";
+					var dataAddress = {};
+
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					//address use
+					if(typeof req.body.use !== 'undefined'){
+						addressUseCode =  req.body.use.trim().toLowerCase();
+						if(validator.isEmpty(addressUseCode)){
+							err_code = 2;
+							err_msg = "Address Use is required";
+						}else{
+							dataAddress.use = addressUseCode;
+						}
+					}else{
+						addressUseCode = "";
+					} 
+
+					//address type
+					if(typeof req.body.type !== 'undefined'){
+						addressTypeCode =  req.body.type.trim().toLowerCase();
+						if(validator.isEmpty(addressTypeCode)){
+							err_code = 2;
+							err_msg = "Address Type is required";
+						}else{
+							dataAddress.type = addressTypeCode;
+						}
+					}else{
+						addressTypeCode = "";
+					} 
+
+					//address text
+					if(typeof req.body.text !== 'undefined'){
+						addressText =  req.body.text;
+						if(validator.isEmpty(addressText)){
+							err_code = 2;
+							err_msg = "Address Text is required";
+						}else{
+							dataAddress.text = addressText;
+						}
+					}
+
+					//address line
+					if(typeof req.body.line !== 'undefined'){
+						addressLine =  req.body.line;
+						if(validator.isEmpty(addressLine)){
+							err_code = 2;
+							err_msg = "Address Line is required";
+						}else{
+							dataAddress.line = addressLine;
+						}
+					}
+
+					//address city
+					if(typeof req.body.city !== 'undefined'){
+						addressCity =  req.body.city;
+						if(validator.isEmpty(addressCity)){
+							err_code = 2;
+							err_msg = "Address City is required";
+						}else{
+							dataAddress.city = addressCity;
+						}
+					} 
+
+					//address district
+					if(typeof req.body.district !== 'undefined'){
+						addressDistrict =  req.body.district;
+						dataAddress.district = addressDistrict;
+					}
+
+					//address state
+					if(typeof req.body.state !== 'undefined'){
+						addressState =  req.body.state;
+						if(validator.isEmpty(addressState)){
+							err_code = 2;
+							err_msg = "State is required";
+						}else{
+							dataAddress.state = addressState;
+						}
+					}
+
+					//address postal code
+					if(typeof req.body.postal_code !== 'undefined'){
+						addressPostalCode =  req.body.postal_code;
+						if(!validator.isPostalCode(addressPostalCode, 'any')){
+							err_code = 2;
+							err_msg = "Postal Code invalid format.";
+						}else{
+							dataAddress.postal_code = addressPostalCode;
+						}
+					} 
+
+					//address country
+					if(typeof req.body.country !== 'undefined'){
+						addressCountry =  req.body.country;
+						if(validator.isEmpty(addressCountry)){
+							err_code = 2;
+							err_msg = "Country is required";
+						}else{
+							dataAddress.country = addressCountry;
+						}
+					} 
+
+					//address period
+					if(typeof req.body.period !== 'undefined'){
+						var period = req.body.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							addressPeriodStart = arrPeriod[0];
+							addressPeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(addressPeriodStart) && !regex.test(addressPeriodEnd)){
+								err_code = 2;
+								err_msg = "Address Period invalid date format.";
+							}else{
+								dataAddress.period_start = addressPeriodStart;
+								dataAddress.period_end = addressPeriodEnd;
+							}	
+						}else{
+							dataAddress.period_start = "";
+							dataAddress.period_end = "";
+						}
+					}
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								myEmitter.prependListener('checkPatientID', function(){
+									checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+										if(resPatientID.err_code > 0){
+											checkUniqeValue(apikey, "ADDRESS_ID|" + addressId, 'ADDRESS', function(resAddressID){
+												if(resAddressID.err_code > 0){
+													ApiFHIR.put('address', {"apikey": apikey, "_id": addressId, "dr": "PATIENT_ID|"+patientId}, {body: dataAddress, json: true}, function(error, response, body){
+								  					address = body;
+								  					if(address.err_code > 0){
+								  						res.json(address);	
+								  					}else{
+								  						res.json({"err_code": 0, "err_msg": "Address has been update in this patient.", "data": address.data});
+								  					}
+								  				})
+												}else{
+													res.json({"err_code": 505, "err_msg": "Address Id not found"});		
+												}
+											})
+										}else{
+											res.json({"err_code": 504, "err_msg": "Patient Id not found"});		
+										}
+									})
+								})
+
+								myEmitter.prependListener('checkAddressType', function(){
+									if(validator.isEmpty(addressTypeCode)){
+										myEmitter.emit('checkPatientID');
+									}else{
+										checkCode(apikey, addressTypeCode, 'ADDRESS_TYPE', function(resAddressTypeCode){
+											if(resAddressTypeCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+												myEmitter.emit('checkPatientID');
+											}else{
+												res.json({"err_code": 502, "err_msg": "Address Type Code not found"});		
+											}
+										})
+									}
+								})
+
+								if(validator.isEmpty(addressUseCode)){
+									myEmitter.emit('checkAddressType');	
+								}else{
+									checkCode(apikey, addressUseCode, 'ADDRESS_USE', function(resAddressUseCode){
+										if(resAddressUseCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+											myEmitter.emit('checkAddressType');
+										}else{
+											res.json({"err_code": 501, "err_msg": "Address Use Code not found"});
+										}
+									})
+								}
 							}else{
 								result.err_code = 500;
 								res.json(result);

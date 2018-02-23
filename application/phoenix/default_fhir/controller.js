@@ -1650,10 +1650,26 @@ var controller = {
         " VALUES ('"+contact_point_id+"', " + values.slice(0, -1) + ")";
       
       db.upsert(query,function(succes){
+        var arrContactPoint = [];
         var query = "SELECT contact_point_id, contact_point_system, contact_point_value, contact_point_use, contact_point_rank, contact_point_period_start, contact_point_period_end FROM BACIRO_FHIR.CONTACT_POINT WHERE contact_point_id = '" + contact_point_id + "'";
         db.query(query,function(dataJson){
           rez = lowercaseObject(dataJson);
-          res.json({"err_code":0,"data":rez});
+          for(i = 0; i < rez.length; i++){
+            var ContactPoint = {};
+            ContactPoint.id = rez[i].contact_point_id;
+            ContactPoint.system = rez[i].contact_point_system;
+            ContactPoint.value = rez[i].contact_point_value;
+            ContactPoint.use = rez[i].contact_point_use;
+            ContactPoint.rank = rez[i].contact_point_rank;
+            
+            if(rez[i].contact_point_period_start == null){
+              ContactPoint.period = formatDate(rez[i].contact_point_period_start) +' to '+ formatDate(rez[i].contact_point_period_end);
+            }else{
+              ContactPoint.period = "";
+            }
+            arrContactPoint[i] = ContactPoint;
+          }
+          res.json({"err_code":0,"data": arrContactPoint});
         },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addContactPoint"});
         });
@@ -1768,10 +1784,32 @@ var controller = {
         " VALUES ('"+ address_id +"', " + values.slice(0, -1) + ")";
       
       db.upsert(query,function(succes){
-        var query = "SELECT address_id, address_use, address_type, address_text, address_line, address_city, address_district, address_state, address_postal_code, address_country FROM BACIRO_FHIR.ADDRESS WHERE address_id = '" + address_id + "'";
+        var arrAddress = [];
+        var query = "SELECT address_id, address_use, address_type, address_text, address_line, address_city, address_district, address_state, address_postal_code, address_country, address_period_start, address_period_end FROM BACIRO_FHIR.ADDRESS WHERE address_id = '" + address_id + "'";
         db.query(query,function(dataJson){
           rez = lowercaseObject(dataJson);
-          res.json({"err_code":0,"data":rez});
+          for(i = 0; i < rez.length; i++){
+            var Address = {};
+            Address.id = rez[i].address_id;
+            Address.use = rez[i].address_use;
+            Address.type = rez[i].address_type;
+            Address.text = rez[i].address_text;
+            Address.line = rez[i].address_line;
+            Address.city = rez[i].address_city;
+            Address.district = rez[i].address_district;
+            Address.state = rez[i].address_state;
+            Address.postalCode = rez[i].address_postal_code;
+            Address.addressCountry = rez[i].address_country;
+            
+            
+            if(rez[i].address_period_start == null){
+              Address.period = formatDate(rez[i].address_period_start) +' to '+ formatDate(rez[i].address_period_end);
+            }else{
+              Address.period = "";
+            }
+            arrAddress[i] = Address;
+          }
+          res.json({"err_code":0,"data": arrAddress});
         },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addAddress"});
         });
@@ -2719,10 +2757,269 @@ var controller = {
           }
           res.json({"err_code":0,"data": arrHumanName});
         },function(e){
-          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateIdentifier"});
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateHumanName"});
         });
       },function(e){
-          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateIdentifier"});
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateHumanName"});
+      });
+    },
+    contactPoint: function updateContactPoint(req, res){
+      var _id = req.params._id;
+      var domainResource = req.params.dr;
+
+      var contact_point_system = req.body.system;
+      var contact_point_value = req.body.value;
+      var contact_point_use = req.body.use;
+      var contact_point_rank = req.body.rank;
+      var person_id = req.body.person_id;
+      var patient_id = req.body.patient_id;
+      var patient_contact_id = req.body.patient_contact_id;
+      var related_person_id = req.body.related_person_id;
+
+
+      //susun query
+      var column = "";
+      var values = "";
+
+      if(typeof contact_point_system !== 'undefined'){
+        column += 'contact_point_system,';
+        values += "'" + contact_point_system +"',";
+      }
+
+      if(typeof contact_point_value !== 'undefined'){
+        column += 'contact_point_value,';
+        values += "'" + contact_point_value +"',";
+      }
+
+      if(typeof contact_point_use !== 'undefined'){
+        column += 'contact_point_use,';
+        values += "'" + contact_point_use +"',";
+      }
+
+      if(typeof contact_point_rank !== 'undefined'){
+        column += 'contact_point_rank,';
+        values +=  contact_point_rank + ",";
+      }
+
+      if(typeof req.body.period_start !== 'undefined'){
+        if(req.body.period_start == ""){
+          contact_point_period_start = null;
+        }else{
+          contact_point_period_start = "to_date('"+req.body.period_start+ "', 'yyyy-MM-dd')";
+        }
+
+        column += 'contact_point_period_start,';
+        values += contact_point_period_start + ",";
+      }
+
+      if(typeof req.body.period_end !== 'undefined'){
+        if(req.body.period_end == ""){
+          contact_point_period_end = null;
+        }else{
+          contact_point_period_end = "to_date('"+req.body.period_end+ "', 'yyyy-MM-dd')";
+        }
+
+        column += 'contact_point_period_end,';
+        values += contact_point_period_end + ",";
+      }
+
+      if(typeof person_id !== 'undefined'){
+        column += 'person_id,';
+        values += "'"+ person_id + "',";
+      }
+
+      if(typeof patient_id !== 'undefined'){
+        column += 'patient_id,';
+        values += "'"+ patient_id + "',";
+      }
+
+      if(typeof patient_contact_id !== 'undefined'){
+        column += 'patient_contact_id,';
+        values += "'"+ patient_contact_id + "',";
+      }
+
+      if(typeof related_person_id !== 'undefined'){
+        column += 'related_person_id,';
+        values += "'"+ related_person_id + "',";
+      }
+
+      var arrResource = domainResource.split('|');
+      var fieldResource = arrResource[0];
+      var valueResource = arrResource[1];
+      var condition = "contact_point_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+
+      var query = "UPSERT INTO BACIRO_FHIR.CONTACT_POINT(contact_point_id," + column.slice(0, -1) + ") SELECT contact_point_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.CONTACT_POINT WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var arrContactPoint = [];
+        var query = "SELECT contact_point_id, contact_point_system, contact_point_value, contact_point_use, contact_point_rank, contact_point_period_start, contact_point_period_end FROM BACIRO_FHIR.CONTACT_POINT WHERE " + condition;
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          for(i = 0; i < rez.length; i++){
+            var ContactPoint = {};
+            ContactPoint.id = rez[i].contact_point_id;
+            ContactPoint.system = rez[i].contact_point_system;
+            ContactPoint.value = rez[i].contact_point_value;
+            ContactPoint.use = rez[i].contact_point_use;
+            ContactPoint.rank = rez[i].contact_point_rank;
+            
+            if(rez[i].contact_point_period_start == null){
+              ContactPoint.period = formatDate(rez[i].contact_point_period_start) +' to '+ formatDate(rez[i].contact_point_period_end);
+            }else{
+              ContactPoint.period = "";
+            }
+            arrContactPoint[i] = ContactPoint;
+          }
+          res.json({"err_code":0,"data": arrContactPoint});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateContactPoint"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateContactPoint"});
+      });
+    },
+    address: function updateAddress(req, res){
+      var _id = req.params._id;
+      var domainResource = req.params.dr;
+
+      var address_use = req.body.use;
+      var address_type = req.body.type;
+      var address_text = req.body.text;
+      var address_line = req.body.line;
+      var address_city = req.body.city;
+      var address_district = req.body.district;
+      var address_state = req.body.state;
+      var address_postal_code = req.body.postal_code;
+      var address_country = req.body.country;
+      var person_id = req.body.person_id;
+      var patient_id = req.body.patient_id;
+      var related_person_id = req.body.related_person_id;
+
+
+      //susun query
+      var column = "";
+      var values = "";
+
+      if(typeof address_use !== 'undefined'){
+        column += 'address_use,';
+        values += "'" + address_use +"',";
+      }
+
+      if(typeof address_type !== 'undefined'){
+        column += 'address_type,';
+        values += "'" + address_type +"',";
+      }
+
+      if(typeof address_text !== 'undefined'){
+        column += 'address_text,';
+        values += "'" + address_text +"',";
+      }
+
+      if(typeof address_line !== 'undefined'){
+        column += 'address_line,';
+        values += "'" + address_line + "',";
+      }
+
+      if(typeof address_city !== 'undefined'){
+        column += 'address_city,';
+        values +=  "'" + address_city + "',";
+      }
+
+      if(typeof address_district !== 'undefined'){
+        column += 'address_district,';
+        values +=  "'" + address_district + "',";
+      }
+
+      if(typeof address_state !== 'undefined'){
+        column += 'address_state,';
+        values += "'" + address_state + "',";
+      }
+
+      if(typeof address_postal_code !== 'undefined'){
+        column += 'address_postal_code,';
+        values +=  "'" + address_postal_code + "',";
+      }
+
+      if(typeof address_country !== 'undefined'){
+        column += 'address_country,';
+        values +=  "'" + address_country + "',";
+      }
+
+      if(typeof req.body.period_start !== 'undefined'){
+        if(req.body.period_start == ""){
+          address_period_start = null;
+        }else{
+          address_period_start = "to_date('"+req.body.period_start+ "', 'yyyy-MM-dd')";
+        }
+
+        column += 'address_period_start,';
+        values += address_period_start + ",";
+      }
+
+      if(typeof req.body.period_end !== 'undefined'){
+        if(req.body.period_end == ""){
+          address_period_end = null;
+        }else{
+          address_period_end = "to_date('"+req.body.period_end+ "', 'yyyy-MM-dd')";
+        }
+
+        column += 'address_period_end,';
+        values += address_period_end + ",";
+      }
+
+      if(typeof person_id !== 'undefined'){
+        column += 'person_id,';
+        values += "'"+ person_id + "',";
+      }
+
+      if(typeof patient_id !== 'undefined'){
+        column += 'patient_id,';
+        values += "'"+ patient_id + "',";
+      }
+
+      if(typeof related_person_id !== 'undefined'){
+        column += 'related_person_id,';
+        values += "'"+ related_person_id + "',";
+      }
+
+      var arrResource = domainResource.split('|');
+      var fieldResource = arrResource[0];
+      var valueResource = arrResource[1];
+      var condition = "address_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+
+      var query = "UPSERT INTO BACIRO_FHIR.ADDRESS(address_id," + column.slice(0, -1) + ") SELECT address_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.ADDRESS WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var arrAddress = [];
+        var query = "SELECT address_id, address_use, address_type, address_text, address_line, address_city, address_district, address_state, address_postal_code, address_country, address_period_start, address_period_end FROM BACIRO_FHIR.ADDRESS WHERE " + condition;
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          for(i = 0; i < rez.length; i++){
+            var Address = {};
+            Address.id = rez[i].address_id;
+            Address.use = rez[i].address_use;
+            Address.type = rez[i].address_type;
+            Address.text = rez[i].address_text;
+            Address.line = rez[i].address_line;
+            Address.city = rez[i].address_city;
+            Address.district = rez[i].address_district;
+            Address.state = rez[i].address_state;
+            Address.postalCode = rez[i].address_postal_code;
+            Address.addressCountry = rez[i].address_country;
+            
+            if(rez[i].address_period_start == null){
+              Address.period = formatDate(rez[i].address_period_start) +' to '+ formatDate(rez[i].address_period_end);
+            }else{
+              Address.period = "";
+            }
+            arrAddress[i] = Address;
+          }
+          res.json({"err_code":0,"data": arrAddress});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAddress"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAddress"});
       });
     }
   }
