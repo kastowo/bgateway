@@ -437,6 +437,83 @@ var controller = {
       },function(e){
         res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "getPatientLink"});
       });
+    },
+    generalPractitioner: function getGeneralPractitioner(req, res){
+      var apikey = req.params.apikey;
+      var hostFHIR = configYaml.fhir.host;
+      var portFHIR = configYaml.fhir.port;
+
+      var patientId = req.query.patient_id;
+      //susun query
+      var condition = "";
+
+      if(typeof patientId !== 'undefined' && patientId !== ""){
+        condition += "patient_id = '" + patientId + "' AND,";  
+      }
+
+      if(condition == ""){
+        fixCondition = "";
+      }else{
+        fixCondition = " WHERE " + condition.slice(0, -4);
+      }
+      
+      var query = "SELECT general_practitioner_id, practitioner_id, organization_id FROM BACIRO_FHIR.GENERAL_PRACTITIONER" + fixCondition;
+
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        var arrGeneralPractitioner = [];
+
+        for(i = 0; i < rez.length; i++){
+          if(rez[i].practitioner_id !== "" || rez[i].practitioner_id !== "null"){
+            arrGeneralPractitioner.push({
+                                        id: rez[i].general_practitioner_id, 
+                                        url: hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner?_id=' + rez[i].practitioner_id
+                                      }); 
+          }else if(rez[i].organization_id !== "" || rez[i].organization_id !== "null"){
+            arrGeneralPractitioner.push({
+                                        id: rez[i].organization_id, 
+                                        url: hostFHIR + ':' + portFHIR + '/' + apikey + '/Organization?_id=' + rez[i].organization_id
+                                      }); 
+          }
+        }
+        res.json({"err_code": 0, "data": arrGeneralPractitioner});
+      },function(e){
+        res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "getGeneralPractitioner"});
+      });
+    },
+    patientCommunication: function getPatientCommunication(req, res){
+      var patientId = req.query.patient_id;
+      //susun query
+      var condition = "";
+
+      if(typeof patientId !== 'undefined' && patientId !== ""){
+        condition += "patient_id = '" + patientId + "' AND,";  
+      }
+
+      if(condition == ""){
+        fixCondition = "";
+      }else{
+        fixCondition = " WHERE " + condition.slice(0, -4);
+      }
+      
+      var query = "SELECT patient_communication_id, patient_communication_language, patient_communication_preferred FROM BACIRO_FHIR.PATIENT_COMMUNICATION" + fixCondition;
+
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        var arrPatientCommunication = [];
+        for(i = 0; i < rez.length; i++){
+          var PatientCommunication = {};
+          // var 
+          PatientCommunication.id = rez[i].patient_communication_id;
+          PatientCommunication.language = rez[i].patient_communication_language;
+          PatientCommunication.preferred = rez[i].patient_communication_preferred;
+          
+          arrPatientCommunication[i] = PatientCommunication;
+        }
+        res.json({"err_code": 0, "data": arrPatientCommunication});
+      },function(e){
+        res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "getPatientCommunication"});
+      });
     }
   },
   post: {
@@ -680,6 +757,264 @@ var controller = {
       },function(e){
           res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addPatientContact"});
       });
+    },
+    generalPractitioner: function addGeneralPractitioner(req, res){
+      var apikey = req.params.apikey;
+      var hostFHIR = configYaml.fhir.host;
+      var portFHIR = configYaml.fhir.port;
+
+      var general_practitioner_id = req.body.id;
+      var organization_id = req.body.organization_id;
+      var practitioner_id = req.body.practitioner_id;
+      var patient_id = req.body.patient_id;
+      //susun query
+      var column = "";
+      var values = "";
+
+      if(typeof organization_id !== 'undefined' && organization_id !== ""){
+        column += 'organization_id,';
+        values += "'"+ organization_id +"',";
+      }
+
+      if(typeof practitioner_id !== 'undefined' && practitioner_id !== ""){
+        column += 'practitioner_id,';
+        values += "'"+ practitioner_id +"',";
+      }
+
+      if(typeof patient_id !== 'undefined' && patient_id !== ""){
+        column += 'patient_id,';
+        values += "'"+ patient_id +"',";
+      }
+      
+      var query = "UPSERT INTO BACIRO_FHIR.GENERAL_PRACTITIONER(general_practitioner_id, " + column.slice(0, -1) + ")"+
+        " VALUES ('"+general_practitioner_id+"', " + values.slice(0, -1) + ")";
+      
+      db.upsert(query,function(succes){
+        var arrGeneralPractitioner = [];
+        var query = "SELECT general_practitioner_id, patient_id, practitioner_id, organization_id FROM BACIRO_FHIR.GENERAL_PRACTITIONER WHERE general_practitioner_id = '" + general_practitioner_id + "' AND patient_id = '"+ patient_id +"' ";
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          for(i = 0; i < rez.length; i++){
+            var GeneralPractitioner = {};
+            GeneralPractitioner.id = rez[i].general_practitioner_id;
+            if(rez[i].practitioner_id !== "" || rez[i].practitioner_id !== null){
+              GeneralPractitioner.generalPractitioner = host + ':' + port + '/' + apikey + '/Practitioner?_id=' + rez[i].practitioner_id;
+            }else if (rez[i].organization_id !== "" || rez[i].organization_id !== null){
+              GeneralPractitioner.generalPractitioner = host + ':' + port + '/' + apikey + '/Organization?_id=' + rez[i].organization_id;
+            }else{
+              GeneralPractitioner.generalPractitioner = "";
+            }
+
+            arrGeneralPractitioner[i] = GeneralPractitioner;
+          }
+          res.json({"err_code":0,"data": arrGeneralPractitioner});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addGeneralPractitioner"});
+        });
+      },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addGeneralPractitioner"});
+      });
+    }
+  },
+  put:{
+    patient: function updatePatient(req, res){
+      var patient_id = req.params.patient_id;
+
+      var patient_gender = req.body.gender;
+      var patient_birthdate = req.body.birthdate;
+      var patient_deceased = req.body.deceased;
+      var patient_deceased_date = req.body.deceased_date;
+      var patient_marital_status = req.body.marital_status;
+      var patient_multiple_birth = req.body.multiple_birth;
+      var patient_multiple_number = req.body.multiple_number;
+      var organization_id = req.body.managing_organization;
+
+      //patient_animal
+      var patient_animal_species = req.body.species;
+      var patient_animal_breed = req.body.breed;
+      var patient_animal_gender_status = req.body.gender_status;
+      var patient_animal_id = req.body.animal_id;
+
+      //patient_communication
+      var patient_communication_language = req.body.communication;      
+      var patient_communication_preferred = req.body.preferred;
+      var patient_communication_id = req.body.communication_id;
+
+      //general_practitioner
+      var general_practitioner_practitioner_id = req.body.general_practitioner_practitioner_id;
+      var general_practitioner_organization_id = req.body.general_practitioner_organization_id;
+      var general_practitioner_id = req.body.general_practitioner_id;
+
+      //patient_link
+      var patient_link_other_patient_id = req.body.link_other_patient_id;
+      var patient_link_other_related_person_id = req.body.link_other_related_person_id;
+      var patient_link_type = req.body.link_type;
+      var patient_link_id = req.body.link_other_id;
+
+      //susun query update
+      var column = "";
+      var values = "";
+
+      var columnAnimal = "";
+      var valuesAnimal = "";
+
+      var columnCommunication = "";
+      var valuesCommunication = "";
+
+      var columnGeneralPractitioner = "";
+      var valuesGeneralPractitioner = "";
+
+      var columnPatientLink = "";
+      var valuesPatientLink = "";
+
+      if(typeof patient_animal_id !== 'undefined' && patient_animal_id !== ""){
+        if(typeof patient_animal_species !== 'undefined'){
+          columnAnimal += 'patient_animal_species,';
+          valuesAnimal += "'" +patient_animal_species +"',";  
+        }
+
+        if(typeof patient_animal_breed !== 'undefined'){
+          columnAnimal += 'patient_animal_breed,';
+          valuesAnimal += "'" +patient_animal_breed +"',";  
+        }
+
+        if(typeof patient_animal_gender_status !== 'undefined'){
+          columnAnimal += 'patient_animal_gender_status,';
+          valuesAnimal += "'" +patient_animal_gender_status +"',";  
+        }
+
+        var conditionAnimal = "patient_animal_id = '" + patient_animal_id + "'";
+        var query = "UPSERT INTO BACIRO_FHIR.PATIENT_ANIMAL(patient_animal_id," + columnAnimal.slice(0, -1) + ") SELECT patient_animal_id, " + valuesAnimal.slice(0, -1) + " FROM BACIRO_FHIR.PATIENT_ANIMAL WHERE " + conditionAnimal;
+
+        db.upsert(query,function(succes){
+          console.log("Patient Animal has been update.");
+        },function(e){
+          console.log("Error updating patient animal.");
+        })
+      }
+
+      if(typeof patient_communication_id !== 'undefined' && patient_communication_id !== ""){
+        if(typeof patient_communication_language !== 'undefined'){
+          columnCommunication += 'patient_communication_language,';
+          valuesCommunication += "'" +patient_communication_language +"',";  
+        }
+
+        if(typeof patient_communication_preferred !== 'undefined'){
+          columnCommunication += 'patient_communication_preferred,';
+          valuesCommunication += "'" +patient_communication_preferred +"',";  
+        }
+
+        var conditionCommunication = "patient_communication_id = '" + patient_communication_id + "' AND patient_id = '" + patient_id + "' ";
+        var query = "UPSERT INTO BACIRO_FHIR.PATIENT_COMMUNICATION(patient_communication_id," + columnCommunication.slice(0, -1) + ") SELECT patient_communication_id, " + valuesCommunication.slice(0, -1) + " FROM BACIRO_FHIR.PATIENT_COMMUNICATION WHERE " + conditionCommunication;
+
+        db.upsert(query,function(succes){
+          console.log("Patient communication has been update.");
+        },function(e){
+          console.log("Error updating patient communication.");
+        })
+      }
+
+      if(typeof general_practitioner_id !== 'undefined' && general_practitioner_id !== ""){
+        if(typeof general_practitioner_organization_id !== 'undefined'){
+          columnGeneralPractitioner += 'organization_id,';
+          valuesGeneralPractitioner += "'" +general_practitioner_organization_id +"',";  
+        }
+
+        if(typeof general_practitioner_practitioner_id !== 'undefined'){
+          columnGeneralPractitioner += 'practitioner_id,';
+          valuesGeneralPractitioner += "'" +general_practitioner_practitioner_id +"',";  
+        }
+
+        var conditionGeneralPractitioner = "general_practitioner_id = '" + general_practitioner_id + "' AND patient_id = '" + patient_id + "' ";
+        var query = "UPSERT INTO BACIRO_FHIR.GENERAL_PRACTITIONER(general_practitioner_id," + columnGeneralPractitioner.slice(0, -1) + ") SELECT general_practitioner_id, " + valuesGeneralPractitioner.slice(0, -1) + " FROM BACIRO_FHIR.GENERAL_PRACTITIONER WHERE " + conditionGeneralPractitioner;
+
+        db.upsert(query,function(succes){
+          console.log("General Practitioner has been update.");
+        },function(e){
+          console.log("Error updating general practitioner.");
+        })
+      }
+
+      if(typeof patient_link_id !== 'undefined' && patient_link_id !== ""){
+        if(typeof patient_link_other_patient_id !== 'undefined'){
+          columnPatientLink += 'patient_link_other_patient_id,';
+          valuesPatientLink += "'" +patient_link_other_patient_id +"',";  
+        }
+
+        if(typeof patient_link_other_related_person_id !== 'undefined'){
+          columnPatientLink += 'patient_link_other_related_person_id,';
+          valuesPatientLink += "'" +patient_link_other_related_person_id +"',";  
+        }
+
+        if(typeof patient_link_type !== 'undefined'){
+          columnPatientLink += 'patient_link_type,';
+          valuesPatientLink += "'" +patient_link_type +"',";  
+        }
+
+        var conditionPatientLink = "patient_link_id = '" + patient_link_id + "' AND patient_id = '" + patient_id + "' ";
+        var query = "UPSERT INTO BACIRO_FHIR.PATIENT_LINK(patient_link_id," + columnPatientLink.slice(0, -1) + ") SELECT patient_link_id, " + valuesPatientLink.slice(0, -1) + " FROM BACIRO_FHIR.PATIENT_LINK WHERE " + conditionPatientLink;
+
+        db.upsert(query,function(succes){
+          console.log("Patient Link has been update.");
+        },function(e){
+          console.log("Error updating patient link.");
+        })
+      }
+
+
+      if(typeof patient_gender !== 'undefined' && patient_gender !== ""){
+        column += 'patient_gender,';
+        values += "'" +patient_gender +"',";
+      }
+
+      if(typeof patient_birthdate !== 'undefined' && patient_birthdate !== ""){
+        column += 'patient_birthdate,';
+        values += "to_date('" + patient_birthdate +"', 'yyyy-MM-dd'),";
+      }
+
+      if(typeof patient_deceased !== 'undefined' && patient_deceased !== ""){
+        column += 'patient_deceased,';
+        values += patient_deceased +",";
+      }
+
+      if(typeof patient_deceased_date !== 'undefined' && patient_deceased_date !== ""){
+        column += 'patient_deceased_date,';
+        values += "to_date('" + patient_deceased_date +"', 'yyyy-MM-dd'),";
+      }
+
+      if(typeof patient_marital_status !== 'undefined' && patient_marital_status !== ""){
+        column += 'patient_marital_status,';
+        values += "'" +patient_marital_status +"',";
+      }
+
+      if(typeof patient_multiple_birth !== 'undefined' && patient_multiple_birth !== ""){
+        column += 'patient_multiple_birth,';
+        values += patient_multiple_birth +",";
+      }
+
+      if(typeof patient_multiple_number !== 'undefined' && patient_multiple_number !== ""){
+        column += 'patient_multiple_number,';
+        values += patient_multiple_number +",";
+      }
+
+      if(typeof organization_id !== 'undefined' && organization_id !== ""){
+        column += 'organization_id,';
+        values += "'" +organization_id +"',";
+      }
+
+      if(column == ""){
+        res.json({"err_code":0, "err_msg": "Success updated."});
+      }else{
+        var condition = "patient_id = '" + patient_id + "'";
+
+        var query = "UPSERT INTO BACIRO_FHIR.PATIENT(patient_id," + column.slice(0, -1) + ") SELECT patient_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.PATIENT WHERE " + condition;
+        
+        db.upsert(query,function(succes){
+          res.json({"err_code":0, "err_msg": "Success updated."});          
+        },function(e){
+            res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updatePatient"});
+        });
+      }
     }
   }
 }

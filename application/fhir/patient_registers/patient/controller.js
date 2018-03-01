@@ -510,7 +510,6 @@ var controller = {
 
 																													ApiFHIR.get('PatientContact', {"apikey": apikey}, {}, function(error, response, body){
 																														patientContact = JSON.parse(body);
-																														
 																														if(patientContact.err_code == 0){
 																															var objectPatient = {};
 																															objectPatient.resourceType = patient.resourceType;
@@ -533,7 +532,9 @@ var controller = {
 																															for(k=0; k < patientContact.data.length; k++){
 																																contactTeleponJoin = contactTeleponJoin.concat(patientContact.data[k].telecom);
 																															}
-																															patientContact.data[0].telecom = contactTeleponJoin; // set ke ke data pertama karena sudah digabung
+																															if(typeof patientContact.data[0].telecom !== 'undefined'){
+																																patientContact.data[0].telecom = contactTeleponJoin; // set ke ke data pertama karena sudah digabung
+																															}
 																															objectPatient.contact = removeDuplicates(patientContact.data);
 																															objectPatient.animal = patient.animal;
 																															objectPatient.managingOrganization = patient.managingOrganization;
@@ -577,10 +578,99 @@ var controller = {
 																																		objectPatient.link = patientLink.data;
 
 																																		newPatient[index] = objectPatient;
+																																		
+																																		myEmitter.once("getGeneralPractitioner", function(patient, index, newPatient, countPatien){
+																																			qString = {};
+																															  			qString.patient_id = patient.id;
+																																  		seedPhoenixFHIR.path.GET = {
+																																				"GeneralPractitioner" : {
+																																					"location": "%(apikey)s/GeneralPractitioner",
+																																					"query": qString
+																																				}
+																																			}
 
-																																		if(index == countPatient -1 ){
-																																			res.json({"err_code": 0, "data":newPatient});				
-																																		}
+																																			var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+																																			ApiFHIR.get('GeneralPractitioner', {"apikey": apikey}, {}, function(error, response, body){
+																																				generalPractitioner = JSON.parse(body);
+																																				if(generalPractitioner.err_code == 0){
+																																					var objectPatient = {};
+																																					objectPatient.resourceType = patient.resourceType;
+																																					objectPatient.id = patient.id;
+																																					objectPatient.identifier = patient.identifier;
+																																					objectPatient.active = patient.active;
+																																					objectPatient.name = patient.name;
+																																					objectPatient.telecom = patient.telecom;
+																																					objectPatient.gender = patient.gender;
+																																					objectPatient.birthDate = patient.birthDate;
+																																					objectPatient.deceasedBoolean = patient.deceasedBoolean;
+																																					objectPatient.deceasedDateTime = patient.deceasedDateTime;
+																																					objectPatient.address = patient.address;
+																																					objectPatient.maritalStatus = patient.maritalStatus;
+																																					objectPatient.multipleBirth = patient.multipleBirth;
+																																					objectPatient.multipleInteger = patient.multipleInteger;
+																																					objectPatient.photo = patient.photo;
+																																					objectPatient.contact = patient.contact;
+																																					objectPatient.animal = patient.animal;
+																																					objectPatient.generalPractitioner = generalPractitioner.data;
+																																					objectPatient.managingOrganization = patient.managingOrganization;
+																																					objectPatient.link = patient.link;
+
+																																					newPatient[index] = objectPatient;
+
+																																					myEmitter.once("getPatientCommunication", function(patient, index, newPatient, countPatien){
+																																						qString = {};
+																																		  			qString.patient_id = patient.id;
+																																			  		seedPhoenixFHIR.path.GET = {
+																																							"PatientCommunication" : {
+																																								"location": "%(apikey)s/PatientCommunication",
+																																								"query": qString
+																																							}
+																																						}
+
+																																						var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+																																						ApiFHIR.get('PatientCommunication', {"apikey": apikey}, {}, function(error, response, body){
+																																							communication = JSON.parse(body);
+																																							if(communication.err_code == 0){
+																																								var objectPatient = {};
+																																								objectPatient.resourceType = patient.resourceType;
+																																								objectPatient.id = patient.id;
+																																								objectPatient.identifier = patient.identifier;
+																																								objectPatient.active = patient.active;
+																																								objectPatient.name = patient.name;
+																																								objectPatient.telecom = patient.telecom;
+																																								objectPatient.gender = patient.gender;
+																																								objectPatient.birthDate = patient.birthDate;
+																																								objectPatient.deceasedBoolean = patient.deceasedBoolean;
+																																								objectPatient.deceasedDateTime = patient.deceasedDateTime;
+																																								objectPatient.address = patient.address;
+																																								objectPatient.maritalStatus = patient.maritalStatus;
+																																								objectPatient.multipleBirth = patient.multipleBirth;
+																																								objectPatient.multipleInteger = patient.multipleInteger;
+																																								objectPatient.photo = patient.photo;
+																																								objectPatient.contact = patient.contact;
+																																								objectPatient.animal = patient.animal;
+																																								objectPatient.communication = communication.data;
+																																								objectPatient.generalPractitioner = patient.generalPractitioner;
+																																								objectPatient.managingOrganization = patient.managingOrganization;
+																																								objectPatient.link = patient.link;
+
+																																								newPatient[index] = objectPatient;
+																																								
+																																								if(index == countPatient -1 ){
+																																									res.json({"err_code": 0, "data":newPatient});				
+																																								}
+																																							}else{
+																																								res.json(communication);
+																																							}
+																																						})
+																																					})
+																																					myEmitter.emit('getPatientCommunication', objectPatient, index, newPatient, countPatient);			
+																																				}else{
+																																					res.json(generalPractitioner);
+																																				}
+																																			})
+																																		})
+																																		myEmitter.emit('getGeneralPractitioner', objectPatient, index, newPatient, countPatient);			
 																																	}else{
 																																		res.json(patientLink);
 																																	}
@@ -714,11 +804,302 @@ var controller = {
 													}
 												})
 											}else{
-
+												res.json({"err_code": 502, "err_msg": "Identifier Id not found"});		
 											}
 										})
 									}else{
+										//get identifier
+						  			qString = {};
+						  			qString.patient_id = patientId;
+							  		seedPhoenixFHIR.path.GET = {
+											"Identifier" : {
+												"location": "%(apikey)s/Identifier",
+												"query": qString
+											}
+										}
+										var ApiFHIR = new Apiclient(seedPhoenixFHIR);
 
+										ApiFHIR.get('Identifier', {"apikey": apikey}, {}, function(error, response, body){
+											identifier = JSON.parse(body);
+											if(identifier.err_code == 0){
+												res.json({"err_code": 0, "data":identifier.data});	
+											}else{
+												res.json(identifier);
+											}
+										})
+									}
+								}else{
+									res.json({"err_code": 501, "err_msg": "Patient Id not found"});		
+								}
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				},
+				humanName: function getHumanName(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+					var humanNameId = req.params.human_name_id;
+					
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){	
+							checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+								if(resPatientID.err_code > 0){
+									if(typeof humanNameId !== 'undefined' && !validator.isEmpty(humanNameId)){
+										checkUniqeValue(apikey, "HUMAN_NAME_ID|" + humanNameId, 'HUMAN_NAME', function(resHumanNameID){
+											if(resHumanNameID.err_code > 0){
+												//get identifier
+								  			qString = {};
+								  			qString.patient_id = patientId;
+								  			qString._id = humanNameId;
+									  		seedPhoenixFHIR.path.GET = {
+													"HumanName" : {
+														"location": "%(apikey)s/HumanName",
+														"query": qString
+													}
+												}
+												var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+
+												ApiFHIR.get('HumanName', {"apikey": apikey}, {}, function(error, response, body){
+													humanName = JSON.parse(body);
+													if(humanName.err_code == 0){
+														res.json({"err_code": 0, "data":humanName.data});	
+													}else{
+														res.json(humanName);
+													}
+												})
+											}else{
+												res.json({"err_code": 502, "err_msg": "Human Name Id not found"});		
+											}
+										})
+									}else{
+						  			qString = {};
+						  			qString.patient_id = patientId;
+						  		
+							  		seedPhoenixFHIR.path.GET = {
+											"HumanName" : {
+												"location": "%(apikey)s/HumanName",
+												"query": qString
+											}
+										}
+										var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+
+										ApiFHIR.get('HumanName', {"apikey": apikey}, {}, function(error, response, body){
+											humanName = JSON.parse(body);
+											if(humanName.err_code == 0){
+												res.json({"err_code": 0, "data":humanName.data});	
+											}else{
+												res.json(humanName);
+											}
+										})
+									}
+								}else{
+									res.json({"err_code": 501, "err_msg": "Patient Id not found"});		
+								}
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				},
+				telecom: function getTelecom(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+					var contactPointId = req.params.contact_point_id;
+					
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){	
+							checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+								if(resPatientID.err_code > 0){
+									if(typeof contactPointId !== 'undefined' && !validator.isEmpty(contactPointId)){
+										checkUniqeValue(apikey, "CONTACT_POINT_ID|" + contactPointId, 'CONTACT_POINT', function(resTelecomID){
+											if(resTelecomID.err_code > 0){
+								  			qString = {};
+								  			qString.patient_id = patientId;
+								  			qString._id = contactPointId;
+									  		seedPhoenixFHIR.path.GET = {
+													"ContactPoint" : {
+														"location": "%(apikey)s/ContactPoint",
+														"query": qString
+													}
+												}
+												var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+
+												ApiFHIR.get('ContactPoint', {"apikey": apikey}, {}, function(error, response, body){
+													contactPoint = JSON.parse(body);
+													if(contactPoint.err_code == 0){
+														res.json({"err_code": 0, "data":contactPoint.data});	
+													}else{
+														res.json(contactPoint);
+													}
+												})
+											}else{
+												res.json({"err_code": 502, "err_msg": "Telecom Id not found"});		
+											}
+										})
+									}else{
+						  			qString = {};
+						  			qString.patient_id = patientId;
+						  		
+							  		seedPhoenixFHIR.path.GET = {
+											"ContactPoint" : {
+												"location": "%(apikey)s/ContactPoint",
+												"query": qString
+											}
+										}
+										var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+
+										ApiFHIR.get('ContactPoint', {"apikey": apikey}, {}, function(error, response, body){
+											contactPoint = JSON.parse(body);
+											if(contactPoint.err_code == 0){
+												res.json({"err_code": 0, "data":contactPoint.data});	
+											}else{
+												res.json(contactPoint);
+											}
+										})
+									}
+								}else{
+									res.json({"err_code": 501, "err_msg": "Patient Id not found"});		
+								}
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				},
+				address: function getAddress(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+					var addressId = req.params.address_id;
+					
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){	
+							checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+								if(resPatientID.err_code > 0){
+									if(typeof addressId !== 'undefined' && !validator.isEmpty(addressId)){
+										checkUniqeValue(apikey, "ADDRESS_ID|" + addressId, 'ADDRESS', function(resAddressID){
+											if(resAddressID.err_code > 0){
+								  			qString = {};
+								  			qString.patient_id = patientId;
+								  			qString._id = addressId;
+									  		seedPhoenixFHIR.path.GET = {
+													"Address" : {
+														"location": "%(apikey)s/Address",
+														"query": qString
+													}
+												}
+												var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+
+												ApiFHIR.get('Address', {"apikey": apikey}, {}, function(error, response, body){
+													address = JSON.parse(body);
+													if(address.err_code == 0){
+														res.json({"err_code": 0, "data":address.data});	
+													}else{
+														res.json(address);
+													}
+												})
+											}else{
+												res.json({"err_code": 502, "err_msg": "Address Id not found"});		
+											}
+										})
+									}else{
+						  			qString = {};
+						  			qString.patient_id = patientId;
+						  		
+							  		seedPhoenixFHIR.path.GET = {
+											"Address" : {
+												"location": "%(apikey)s/Address",
+												"query": qString
+											}
+										}
+										var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+
+										ApiFHIR.get('Address', {"apikey": apikey}, {}, function(error, response, body){
+											address = JSON.parse(body);
+											if(address.err_code == 0){
+												res.json({"err_code": 0, "data":address.data});	
+											}else{
+												res.json(address);
+											}
+										})
+									}
+								}else{
+									res.json({"err_code": 501, "err_msg": "Patient Id not found"});		
+								}
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				},
+				attachment: function getAttachment(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+					var attachmentId = req.params.attachment_id;
+					
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){	
+							checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+								if(resPatientID.err_code > 0){
+									if(typeof attachmentId !== 'undefined' && !validator.isEmpty(attachmentId)){
+										checkUniqeValue(apikey, "ATTACHMENT_ID|" + attachmentId, 'ATTACHMENT', function(resAttachmentID){
+											if(resAttachmentID.err_code > 0){
+								  			qString = {};
+								  			qString.patient_id = patientId;
+								  			qString._id = attachmentId;
+									  		seedPhoenixFHIR.path.GET = {
+													"Attachment" : {
+														"location": "%(apikey)s/Attachment",
+														"query": qString
+													}
+												}
+												var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+
+												ApiFHIR.get('Attachment', {"apikey": apikey}, {}, function(error, response, body){
+													attachment = JSON.parse(body);
+													if(attachment.err_code == 0){
+														res.json({"err_code": 0, "data":attachment.data});	
+													}else{
+														res.json(address);
+													}
+												})
+											}else{
+												res.json({"err_code": 502, "err_msg": "Attachment Id not found"});		
+											}
+										})
+									}else{
+						  			qString = {};
+						  			qString.patient_id = patientId;
+						  		
+							  		seedPhoenixFHIR.path.GET = {
+											"Attachment" : {
+												"location": "%(apikey)s/Attachment",
+												"query": qString
+											}
+										}
+										var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+
+										ApiFHIR.get('Attachment', {"apikey": apikey}, {}, function(error, response, body){
+											attachment = JSON.parse(body);
+											if(attachment.err_code == 0){
+												res.json({"err_code": 0, "data":attachment.data});	
+											}else{
+												res.json(attachment);
+											}
+										})
 									}
 								}else{
 									res.json({"err_code": 501, "err_msg": "Patient Id not found"});		
@@ -1634,10 +2015,6 @@ var controller = {
 						generalPractitionerOrganizationId = req.body.general_practitioner.organization_id;
 						if(validator.isEmpty(generalPractitionerOrganizationId)){
 							generalPractitionerOrganizationId = "";
-						}else{
-							if(!validator.isInt(generalPractitionerOrganizationId)){
-								res.json({"err_code": 2, "err_msg": "General practitioner, organization id must be number"})
-							}
 						}
 					}else{
 						generalPractitionerOrganizationId = "";
@@ -1647,10 +2024,6 @@ var controller = {
 						generalPractitionerPractitionerId = req.body.general_practitioner.practitioner_id;
 						if(validator.isEmpty(generalPractitionerPractitionerId)){
 							generalPractitionerPractitionerId = "";
-						}else{
-							if(!validator.isInt(generalPractitionerPractitionerId)){
-								res.json({"err_code": 2, "err_msg": "General practitioner, practitioner id must be number"})
-							}
 						}
 					}else{
 						generalPractitionerPractitionerId = "";
@@ -1661,10 +2034,6 @@ var controller = {
 						managingOrganizationOrganizationId = req.body.managing_organization.organization_id;
 						if(validator.isEmpty(managingOrganizationOrganizationId)){
 							managingOrganizationOrganizationId = "";
-						}else{
-							if(!validator.isInt(managingOrganizationOrganizationId)){
-								res.json({"err_code": 2, "err_msg": "Managing organization, organization id must be number"})
-							}
 						}
 					}else{
 						managingOrganizationOrganizationId = "";
@@ -1763,6 +2132,7 @@ var controller = {
 																																																			var patientLinkId = 'pl' + uniqid.time();
 																																																			var patientCommunicationId = 'pc' + uniqid.time();
 																																																			var patientContactId = 'pc' + uniqid.time();
+																																																			var generalPractitionerId = 'gp' + uniqid.time();
 																																																			//set by sistem
 																																																			var identifierSystem = host + ':' + port + '/' + apikey + '/Patient/'+ patientId +'/Identifier/'+ identifierId;
 																																																			/**
@@ -1906,7 +2276,7 @@ var controller = {
 																																																														"hash": sha1(attachmentData),
 																																																														"title": attachmentTitle,
 																																																														"creation": getFormattedDate(),
-																																																														"url": host + ':' + port + '/' + apikey + '/attachment/' + attachmentId,
+																																																														"url": host + ':' + port + '/' + apikey + '/Patient/'+patientId+'/Photo/' + attachmentId,
 																																																														"patient_id": patientId
 																																																													}
 																																																			
@@ -2042,6 +2412,24 @@ var controller = {
 																																														  						res.json(contactPoint2);	
 																																														  					}
 																																														  				})
+
+																																														  				//generalpractitioner
+																																														  				if(!validator.isEmpty(generalPractitionerPractitionerId) || !validator.isEmpty(generalPractitionerOrganizationId)){
+																																														  					dataGeneralPractitioner = {
+																																														  																		"id": generalPractitionerId,
+																																														  																		"patient_id": patientId,
+																																														  																		"practitioner_id": generalPractitionerPractitionerId,
+																																														  																		"organization_id": generalPractitionerOrganizationId 
+																																														  																	}
+
+																																																				ApiFHIR.post('generalPractitioner', {"apikey": apikey}, {body: dataGeneralPractitioner, json: true}, function(error, response, body){
+																																															  					generalPractitioner = body;
+																																															  					if(generalPractitioner.err_code > 0){
+																																															  						res.json(generalPractitioner);	
+																																															  					}
+																																															  				})																																														  																	
+																																														  				}
+																																														  				
 																																													  					res.json({"err_code": 0, "err_msg": "Patient has been add.", "data": [{"_id": patientId}]});
 																																																														
 																																																		}else{
@@ -2889,9 +3277,724 @@ var controller = {
 					}else{
 						res.json({"err_code": err_code, "err_msg": err_msg});
 					}
+				},
+				attachment: function addAttachment(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+
+					var err_code = 0;
+					var err_msg = "";
+
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					if(typeof req.body.language !== 'undefined'){
+						attachmentLanguageCode =  req.body.language;
+						if(validator.isEmpty(attachmentLanguageCode)){
+							err_code = 2;
+							err_msg = "Language is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'language' in json request.";
+					}
+
+					//photo data
+					if(typeof req.body.data !== 'undefined'){
+						attachmentData =  req.body.data;
+						if(validator.isEmpty(attachmentData)){
+							err_code = 2;
+							err_msg = "Attachment Data is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'data' in json request.";
+					}
+
+					//photo size
+					if(typeof req.body.size !== 'undefined'){
+						attachmentSize =  req.body.size;
+						if(validator.isEmpty(attachmentSize)){
+							err_code = 2;
+							err_msg = "Attachment Size is required";
+						}else{
+							attachmentSize = bytes(attachmentSize); //convert to bytes because data type is integer	
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'size' in json request.";
+					}
+
+					//photo title
+					if(typeof req.body.title !== 'undefined'){
+						attachmentTitle =  req.body.title;
+						if(validator.isEmpty(attachmentTitle)){
+							err_code = 2;
+							err_msg = "Title photo is required";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'title' in json request.";
+					}
+
+					//photo content_type
+					if(typeof req.body.content_type !== 'undefined'){
+						attachmentContentType =  req.body.content_type;
+						if(validator.isEmpty(attachmentContentType)){
+							err_code = 2;
+							err_msg = "Attachment Content-Type is required";
+						}else{
+							attachmentContentType = attachmentContentType.trim().toLowerCase();
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'content_type' in json request.";
+					}
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+									if(resPatientID.err_code > 0){
+										checkCode(apikey, attachmentLanguageCode, 'LANGUAGES', function(resLanguage){
+											if(resLanguage.err_code > 0){
+												// attachment
+												var attachmentId = 'att' + uniqid.time();
+												var dataAttachment = {
+																							"id": attachmentId,
+																							"content_type": attachmentContentType,
+																							"language": attachmentLanguageCode,
+																							"data": attachmentData,
+																							"size": attachmentSize,
+																							"hash": sha1(attachmentData),
+																							"title": attachmentTitle,
+																							"creation": getFormattedDate(),
+																							"url": host + ':' + port + '/' + apikey + '/Patient/'+patientId+'/Photo/' + attachmentId,
+																							"patient_id": patientId
+																						}
+												
+												//method, endpoint, params, options, callback
+												ApiFHIR.post('attachment', {"apikey": apikey}, {body: dataAttachment, json:true}, function(error, response, body){
+											  	//cek apakah ada error atau tidak
+											  	var attachment = body; //object
+											  	//cek apakah ada error atau tidak
+											  	if(attachment.err_code == 0){
+											  		res.json({"err_code": 0, "err_msg": "Photo has been add in this patient.", "data": attachment.data});
+											  	}else{
+											  		res.json(attachment);		
+											  	}
+												})
+											}else{
+												res.json({"err_code": 502, "err_msg": "Language code not found"});			
+											}
+										})
+									}else{
+										res.json({"err_code": 501, "err_msg": "Patient Id not found"});	
+									}
+								})	
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
 				} 	
 			},
 			put: {
+				patient: function updatePatient(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+
+					var err_code = 0;
+					var err_msg = "";
+					var dataPatient = {};
+					
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					//input check 
+					//gender
+					if(typeof req.body.gender !== 'undefined'){
+						gender =  req.body.gender.trim().toLowerCase();
+						if(validator.isEmpty(gender)){
+							err_code = 2;
+							err_msg = "Gender is required.";
+						}else{
+							dataPatient.gender = gender;
+						}
+					}else{
+						gender = "";
+					}				
+
+					//birthdate
+					if(typeof req.body.birthdate !== 'undefined'){
+						birthdate =  req.body.birthdate;
+						if(validator.isEmpty(birthdate)){
+							err_code = 2;
+							err_msg = "Birthdate is required.";
+						}else{
+							if(!regex.test(birthdate)){
+								err_code = 2;
+								err_msg = "Birthdate invalid date format.";	
+							}else{
+								dataPatient.birthdate = birthdate;
+							}
+						}
+					}				
+
+					//deceased
+					if(typeof req.body.deceased !== 'undefined'){
+						if(typeof req.body.deceased.status !== 'undefined'){
+							deceasedStatus =  req.body.deceased.status;
+							if(deceasedStatus == true && typeof req.body.deceased.date_time !== 'undefined' && validator.isEmpty(req.body.deceased.date_time)){
+								err_code = 2;
+								err_msg = "Deceased date time is required.";
+							}else{
+								deceasedStatus = false;
+							}
+						}else{
+							deceasedStatus = false;
+						}
+
+						dataPatient.deceased = deceasedStatus;
+
+						if(typeof req.body.deceased.date_time !== 'undefined'){
+							deceasedDateTime = req.body.deceased.date_time;
+							if(!regex.test(deceasedDateTime) && deceasedStatus == true){
+								err_code = 2;
+								err_msg = "Deceased Date Time invalid date format.";	
+							}else{
+								dataPatient.deceased_date = deceasedDateTime;
+							}
+						}	
+					}
+					
+					//marital_status
+					if(typeof req.body.marital_status !== 'undefined'){
+						var maritalStatusCode = req.body.marital_status.trim().toUpperCase();
+						dataPatient.marital_status = maritalStatusCode;
+					}else{
+						var maritalStatusCode = "";
+					}
+
+
+					//multiple birth
+					if(typeof req.body.multiple_birth !== 'undefined'){
+						if(typeof req.body.multiple_birth.status !== 'undefined'){
+							var multipleBirthStatus = req.body.multiple_birth.status;
+							if(validator.isEmpty(multipleBirthStatus)){
+								multipleBirthStatus = false;	
+							}
+						}else{
+							multipleBirthStatus = false;
+						}
+
+						dataPatient.multiple_birth = multipleBirthStatus;
+
+						if(typeof req.body.multiple_birth.number !== 'undefined'){
+							var multipleBirthNumber = req.body.multiple_birth.number;
+							if(!validator.isInt(multipleBirthNumber) && multipleBirthStatus == true){
+								err_code = 1;
+								err_msg = "Multiple birth number must be number.";
+							}else{
+								multipleBirthNumber = null;	
+							}
+						}else{
+							multipleBirthNumber = "";
+						}
+						dataPatient.multiple_number = multipleBirthNumber;
+					}
+					
+					
+					//animal
+					if(typeof req.body.animal !== 'undefined'){
+						if(typeof req.body.animal.species !== 'undefined'){
+							animalSpeciesCode = req.body.animal.species;
+							if(validator.isEmpty(animalSpeciesCode)){
+								animalSpeciesCode = "";
+							}
+						}else{
+							animalSpeciesCode = "";
+						}
+						dataPatient.species = animalSpeciesCode;
+						
+						if(typeof req.body.animal.breed !== 'undefined'){
+							animalBreedCode = req.body.animal.breed;
+							if(validator.isEmpty(animalBreedCode)){
+								animalBreedCode = "";
+							}
+						}else{
+							animalBreedCode = "";
+						}
+						dataPatient.breed = animalBreedCode;
+
+						if(typeof req.body.animal.gender_status !== 'undefined'){
+							animalGenderStatus = req.body.animal.breed;
+							if(validator.isEmpty(animalGenderStatus)){
+								animalGenderStatus = "";
+							}
+						}else{
+							animalGenderStatus = "";
+						}
+						dataPatient.gender_status = animalGenderStatus;
+
+						if(!validator.isEmpty(animalSpeciesCode) || !validator.isEmpty(animalBreedCode) || !validator.isEmpty(animalGenderStatus)){
+							if(typeof req.body.animal.id !== 'undefined'){
+								animalId = req.body.animal.id;
+								if(validator.isEmpty(animalId)){
+									err_code = 2;
+									err_msg = "Animal Id is required.";
+								}else{
+									dataPatient.animal_id = animalId;
+								}
+							}else{
+								err_code = 2;
+								err_msg = "Add sub-key 'id' in json animal request.";
+							}
+						}else{
+							animalId = "";	
+						}	
+					}else{
+						animalSpeciesCode = "";
+						animalBreedCode = "";
+						animalId = "";
+					}
+					
+
+					//communication
+					if(typeof req.body.communication !== 'undefined'){
+						if(typeof req.body.communication.language !== 'undefined'){
+							communicationLanguageCode = req.body.communication.language;
+							if(validator.isEmpty(communicationLanguageCode)){
+								err_code = 2;
+								err_msg = "Communication language is required.";
+							}
+						}else{
+							communicationLanguageCode = "";
+						}
+
+						dataPatient.communication = communicationLanguageCode;
+
+						if(typeof req.body.communication.preferred !== 'undefined'){
+							communicationPreferred = req.body.communication.preferred;
+							if(validator.isEmpty(communicationPreferred) && !validator.isEmpty(communicationLanguageCode)){
+								err_code = 2;
+								err_msg = "Communication preferred is required.";
+							}
+						}else{
+							communicationPreferred = "";
+						}
+						dataPatient.preferred = communicationPreferred;
+
+						if(!validator.isEmpty(communicationLanguageCode)){
+							if(typeof req.body.communication.id !== 'undefined'){
+								communicationId = req.body.communication.id;
+								if(validator.isEmpty(communicationId)){
+									err_code = 2;
+									err_msg = "Communication id is required.";		
+								}else{
+									dataPatient.communication_id = communicationId;
+								}
+							}else{
+								err_code = 2;
+								err_msg = "Add sub-key 'id' in json communication request.";	
+							}
+						}else{
+							communicationId = "";	
+						}
+					}else{
+						communicationLanguageCode = "";
+						communicationId = "";
+					}
+					
+
+					//general practitioner
+					if(typeof req.body.general_practitioner !== 'undefined'){
+						if(typeof req.body.general_practitioner.organization_id !== 'undefined'){
+							generalPractitionerOrganizationId = req.body.general_practitioner.organization_id;
+							if(validator.isEmpty(generalPractitionerOrganizationId)){
+								generalPractitionerOrganizationId = "";
+							}
+						}else{
+							generalPractitionerOrganizationId = "";
+						}
+						dataPatient.general_practitioner_organization_id = generalPractitionerOrganizationId;
+
+						if(typeof req.body.general_practitioner.practitioner_id !== 'undefined'){
+							generalPractitionerPractitionerId = req.body.general_practitioner.practitioner_id;
+							if(validator.isEmpty(generalPractitionerPractitionerId)){
+								generalPractitionerPractitionerId = "";
+							}
+						}else{
+							generalPractitionerPractitionerId = "";
+						}
+						dataPatient.general_practitioner_practitioner_id = generalPractitionerPractitionerId;
+
+
+						if(!validator.isEmpty(generalPractitionerPractitionerId) || !validator.isEmpty(generalPractitionerOrganizationId)){
+							if(typeof req.body.general_practitioner.id !== 'undefined'){
+								generalPractitionerId = req.body.general_practitioner.id;
+								if(validator.isEmpty(generalPractitionerId)){
+									err_code = 2;
+									err_msg = "General Practitioner Id is required.";
+								}else{
+									dataPatient.general_practitioner_id = generalPractitionerId
+								}
+							}else{
+								err_code = 2;
+								err_msg = "Add sub-key 'id' in json general_practitioner request.";
+							}
+						}else{
+							generalPractitionerId = "";	
+						}
+					}else{
+						generalPractitionerOrganizationId = "";
+						generalPractitionerPractitionerId = "";
+						generalPractitionerId = "";
+					}
+
+					//managing organization
+					if(typeof req.body.managing_organization !== 'undefined'){
+						if(typeof req.body.managing_organization.organization_id !== 'undefined'){
+							managingOrganizationOrganizationId = req.body.managing_organization.organization_id;
+							if(validator.isEmpty(managingOrganizationOrganizationId)){
+								managingOrganizationOrganizationId = "";
+							}
+						}else{
+							managingOrganizationOrganizationId = "";
+						}
+						dataPatient.managing_organization = managingOrganizationOrganizationId;
+					}else{
+						managingOrganizationOrganizationId = "";
+					}
+
+					//link other
+					if(typeof req.body.link_other !== 'undefined'){
+						if(typeof req.body.link_other.patient_id !== 'undefined'){
+							if(validator.isInt(req.body.link_other.patient_id) && !validator.isEmpty(req.body.link_other.patient_id)){
+								linkOtherPatientId = req.body.link_other.patient_id;
+								linkOtherRelatedPersonId = "";
+							}else{
+								linkOtherPatientId = "";
+							}
+						}else{
+							linkOtherPatientId = "";
+						}
+
+						if(typeof req.body.link_other.related_person_id !== 'undefined'){
+							if(validator.isInt(req.body.link_other.related_person_id)  && !validator.isEmpty(req.body.link_other.related_person_id)){
+								linkOtherRelatedPersonId = req.body.link_other.related_person_id;
+								linkOtherPatientId = "";
+							}else{
+								linkOtherRelatedPersonId = "";
+							}
+						}else{
+							linkOtherRelatedPersonId = "";
+						}
+						
+						dataPatient.link_other_patient_id = linkOtherPatientId;
+						dataPatient.link_other_related_person_id = linkOtherRelatedPersonId;
+
+						if(!validator.isEmpty(linkOtherPatientId) || !validator.isEmpty(linkOtherRelatedPersonId)){
+							if(typeof req.body.link_other.id !== 'undefined'){
+								linkOtherId = req.body.link_other.id;
+								if(validator.isEmpty(linkOtherId)){
+									err_code = 2;
+									err_msg = "Link Other Id is required.";	
+								}else{
+									dataPatient.link_other_id = linkOtherId;
+								}
+							}else{
+								err_code = 2;
+								err_msg = "Add sub-key 'id' in json link_other request.";
+							}
+						}else{
+							linkOtherId = "";
+						}
+
+						//link type
+						if(typeof req.body.link_type !== 'undefined'){
+							if(!validator.isEmpty(req.body.link_type) && (!validator.isEmpty(linkOtherPatientId) || !validator.isEmpty(linkOtherRelatedPersonId))){
+								if(validator.isEmpty(req.body.link_type)){
+									res.json({"err_code": 2, "err_msg": "Link type is required if link other not empty."})
+								}else{
+									linkTypeCode = req.body.link_type;	
+								}
+							}else{
+								linkTypeCode = ""
+							}
+						}else{
+							linkTypeCode = "";
+						}  
+						dataPatient.link_type = linkTypeCode;
+					}else{
+						linkOtherPatientId = "";
+						linkOtherRelatedPersonId = "";
+						linkOtherId = "";
+						linkTypeCode = "";
+					}
+					
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								myEmitter.prependListener('checkPatientID', function(){
+									checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+										if(resPatientID.err_code > 0){
+												ApiFHIR.put('patient', {"apikey": apikey, "_id": patientId}, {body: dataPatient, json: true}, function(error, response, body){
+							  					patient = body;
+							  					if(patient.err_code > 0){
+							  						res.json(patient);	
+							  					}else{
+							  						res.json({"err_code": 0, "err_msg": "Patient has been update.", "data": [{"_id": patientId}]});
+							  					}
+							  				})
+										}else{
+											res.json({"err_code": 504, "err_msg": "Patient Id not found"});		
+										}
+									})
+								})
+
+								myEmitter.prependListener('checkAnimalId', function(){
+									if(validator.isEmpty(animalId)){
+										myEmitter.emit('checkPatientID');
+									}else{
+										checkUniqeValue(apikey, "PATIENT_ANIMAL_ID|" + patientId, 'PATIENT_ANIMAL', function(resAnimaID){
+											if(resAnimaID.err_code > 0){
+												myEmitter.emit('checkPatientID');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Animal Id not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkAnimalBreeds', function(){
+									if(validator.isEmpty(animalBreedCode)){
+										myEmitter.emit('checkAnimalId');
+									}else{
+										checkCode(apikey, animalBreedCode, 'ANIMAL_BREEDS', function(resBreedsCode){
+											if(resBreedsCode.err_code == 0){
+												myEmitter.emit('checkAnimalId');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Breed Code not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkAnimalSpesies', function(){
+									if(validator.isEmpty(animalSpeciesCode)){
+										myEmitter.emit('checkAnimalBreeds');
+									}else{
+										checkCode(apikey, animalSpeciesCode, 'ANIMAL_SPECIES', function(resSpesiesCode){
+											if(resSpesiesCode.err_code == 0){
+												myEmitter.emit('checkAnimalBreeds');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Spesies Code not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkLinkType', function(){
+									if(validator.isEmpty(linkTypeCode)){
+										myEmitter.emit('checkAnimalSpesies');
+									}else{
+										checkCode(apikey, linkTypeCode, 'LINK_TYPE', function(resLinkTypeCode){
+											if(resLinkTypeCode.err_code == 0){
+												myEmitter.emit('checkAnimalSpesies');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Link Type not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkLinkOtherId', function(){
+									if(validator.isEmpty(linkOtherId)){
+										myEmitter.emit('checkLinkType');
+									}else{
+										checkUniqeValue(apikey, "PATIENT_LINK_ID|" + linkOtherId, 'PATIENT_LINK', function(resLinkID){
+											if(resLinkID.err_code > 0){
+												myEmitter.emit('checkLinkType');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Link Other, id not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkLinkOtherRelatedPerson', function(){
+									if(validator.isEmpty(linkOtherRelatedPersonId)){
+										myEmitter.emit('checkLinkOtherId');
+									}else{
+										checkUniqeValue(apikey, "RELATED_PERSON_ID|" + linkOtherRelatedPersonId, 'RELATED_PERSON', function(resRelatedPersonID){
+											if(resRelatedPersonID.err_code > 0){
+												myEmitter.emit('checkLinkOtherId');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Link Other, related person id not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkLinkOtherPatient', function(){
+									if(validator.isEmpty(linkOtherPatientId)){
+										myEmitter.emit('checkLinkOtherRelatedPerson');
+									}else{
+										checkUniqeValue(apikey, "PATIENT_ID|" + linkOtherPatientId, 'PATIENT', function(resPatientID){
+											if(resPatientID.err_code > 0){
+												myEmitter.emit('checkLinkOtherRelatedPerson');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Link Other, patient id not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkManagingOrganization', function(){
+									if(validator.isEmpty(managingOrganizationOrganizationId)){
+										myEmitter.emit('checkLinkOtherPatient');
+									}else{
+										checkUniqeValue(apikey, "ORGANIZATION_ID|" + managingOrganizationOrganizationId, 'ORGANIZATION', function(resOrganizationID){
+											if(resOrganizationID.err_code > 0){
+												myEmitter.emit('checkLinkOtherPatient');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Managing Organization, organization id not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkGeneralPractitionerId', function(){
+									if(validator.isEmpty(generalPractitionerId)){
+										myEmitter.emit('checkManagingOrganization');
+									}else{
+										checkUniqeValue(apikey, "GENERAL_PRACTITIONER_ID|" + generalPractitionerId, 'GENERAL_PRACTITIONER', function(resGeneralPractitionerID){
+											if(resGeneralPractitionerID.err_code > 0){
+												myEmitter.emit('checkManagingOrganization');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "General Practitioner Id not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkGeneralPractitionerPractitioner', function(){
+									if(validator.isEmpty(generalPractitionerPractitionerId)){
+										myEmitter.emit('checkGeneralPractitionerId');
+									}else{
+										checkUniqeValue(apikey, "PRACTITIONER_ID|" + generalPractitionerPractitionerId, 'PRACTITIONER', function(resPractitionerID){
+											if(resPractitionerID.err_code > 0){
+												myEmitter.emit('checkGeneralPractitionerId');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "General Practitioner, practitioner id not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkGeneralPractitionerOrganization', function(){
+									if(validator.isEmpty(generalPractitionerOrganizationId)){
+										myEmitter.emit('checkGeneralPractitionerPractitioner');
+									}else{
+										checkUniqeValue(apikey, "ORGANIZATION_ID|" + generalPractitionerOrganizationId, 'ORGANIZATION', function(resOrganizationID){
+											if(resOrganizationID.err_code > 0){
+												myEmitter.emit('checkGeneralPractitionerPractitioner');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "General Practitioner, organization id not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkCommunicationId', function(){
+									if(validator.isEmpty(communicationId)){
+										myEmitter.emit('checkGeneralPractitionerPractitioner');
+									}else{
+										checkUniqeValue(apikey, "PATIENT_COMMUNICATION_ID|" + communicationId, 'PATIENT_COMMUNICATION', function(resCommunicationID){
+											if(resCommunicationID.err_code > 0){
+												myEmitter.emit('checkGeneralPractitionerPractitioner');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Communication id not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkLanguage', function(){
+									if(validator.isEmpty(communicationLanguageCode)){
+										myEmitter.emit('checkCommunicationId');
+									}else{
+										checkCode(apikey, communicationLanguageCode, 'LANGUAGES', function(resLanguageCode){
+											if(resLanguageCode.err_code == 0){
+												myEmitter.emit('checkCommunicationId');				
+											}else{
+												res.json({"err_code": 503, "err_msg": "Language code not found."});	
+											}
+										})
+									}
+								})
+
+								myEmitter.prependListener('checkMaritalStatus', function(){
+									if(validator.isEmpty(maritalStatusCode)){
+										myEmitter.emit('checkLanguage');
+									}else{
+										checkCode(apikey, maritalStatusCode, 'MARITAL_STATUS', function(resMaritalStatusCode){
+											if(resMaritalStatusCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+												myEmitter.emit('checkLanguage');
+											}else{
+												res.json({"err_code": 502, "err_msg": "Marital Status Code not found"});		
+											}
+										})
+									}
+								})
+
+								if(validator.isEmpty(gender)){
+									myEmitter.emit('checkMaritalStatus');	
+								}else{
+									checkCode(apikey, gender, 'ADMINISTRATIVE_GENDER', function(resGender){
+										if(resGender.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+											myEmitter.emit('checkMaritalStatus');
+										}else{
+											res.json({"err_code": 501, "err_msg": "Gender not found"});
+										}
+									})
+								}
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
+				},
 				identifier: function updateIdentifier(req, res){
 					var ipAddres = req.connection.remoteAddress;
 					var apikey = req.params.apikey;
@@ -3228,6 +4331,16 @@ var controller = {
 						err_msg = "Patient id is required";
 					}
 
+					if(typeof contactPointId !== 'undefined'){
+						if(validator.isEmpty(contactPointId)){
+							err_code = 2;
+							err_msg = "Telecom id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Telecom id is required";
+					}
+
 					//telecom
 					if(typeof req.body.system !== 'undefined'){
 						contactPointSystemCode =  req.body.system.trim().toLowerCase();
@@ -3405,6 +4518,16 @@ var controller = {
 						err_msg = "Patient id is required";
 					}
 
+					if(typeof addressId !== 'undefined'){
+						if(validator.isEmpty(addressId)){
+							err_code = 2;
+							err_msg = "Address id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Address id is required";
+					}
+
 					//address use
 					if(typeof req.body.use !== 'undefined'){
 						addressUseCode =  req.body.use.trim().toLowerCase();
@@ -3573,6 +4696,145 @@ var controller = {
 											myEmitter.emit('checkAddressType');
 										}else{
 											res.json({"err_code": 501, "err_msg": "Address Use Code not found"});
+										}
+									})
+								}
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
+				},
+				attachment: function updateAttachment(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+					var attachmentId = req.params.attachment_id;
+
+					var err_code = 0;
+					var err_msg = "";
+					var dataAttachment = {};
+
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					if(typeof attachmentId !== 'undefined'){
+						if(validator.isEmpty(attachmentId)){
+							err_code = 2;
+							err_msg = "Photo id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Photo id is required";
+					}
+
+					if(typeof req.body.language !== 'undefined'){
+						attachmentLanguageCode =  req.body.language;
+						if(validator.isEmpty(attachmentLanguageCode)){
+							err_code = 2;
+							err_msg = "Language is required";
+						}else{
+							dataAttachment.language = attachmentLanguageCode;
+						}
+					}else{
+						attachmentLanguageCode = "";
+					}
+
+					//photo data
+					if(typeof req.body.data !== 'undefined'){
+						attachmentData =  req.body.data;
+						if(validator.isEmpty(attachmentData)){
+							err_code = 2;
+							err_msg = "Attachment Data is required";
+						}else{
+							dataAttachment.data = attachmentData;
+						}
+					}else{
+						attachmentData = "";
+					}
+
+					//photo size
+					if(typeof req.body.size !== 'undefined'){
+						attachmentSize =  req.body.size;
+						if(validator.isEmpty(attachmentSize)){
+							err_code = 2;
+							err_msg = "Attachment Size is required";
+						}else{
+							attachmentSize = bytes(attachmentSize); //convert to bytes because data type is integer	
+							dataAttachment.size = attachmentSize;
+						}
+					}
+
+					//photo title
+					if(typeof req.body.title !== 'undefined'){
+						attachmentTitle =  req.body.title;
+						if(validator.isEmpty(attachmentTitle)){
+							err_code = 2;
+							err_msg = "Title photo is required";
+						}else{
+							dataAttachment.title = attachmentTitle;
+						}
+					}
+
+					//photo content_type
+					if(typeof req.body.content_type !== 'undefined'){
+						attachmentContentType =  req.body.content_type;
+						if(validator.isEmpty(attachmentContentType)){
+							err_code = 2;
+							err_msg = "Attachment Content-Type is required";
+						}else{
+							attachmentContentType = attachmentContentType.trim().toLowerCase();
+							dataAttachment.content_type = attachmentContentType;
+						}
+					}
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								myEmitter.prependListener('checkPatientID', function(){
+									checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+										if(resPatientID.err_code > 0){
+											checkUniqeValue(apikey, "ATTACHMENT_ID|" + attachmentId, 'ATTACHMENT', function(resAttachmentID){
+												if(resAttachmentID.err_code > 0){
+													ApiFHIR.put('attachment', {"apikey": apikey, "_id": attachmentId, "dr": "PATIENT_ID|"+patientId}, {body: dataAttachment, json: true}, function(error, response, body){
+								  					attachment = body;
+								  					if(attachment.err_code > 0){
+								  						res.json(attachment);	
+								  					}else{
+								  						res.json({"err_code": 0, "err_msg": "Photo has been update in this patient.", "data": attachment.data});
+								  					}
+								  				})
+												}else{
+													res.json({"err_code": 505, "err_msg": "Photo Id not found"});		
+												}
+											})
+										}else{
+											res.json({"err_code": 504, "err_msg": "Patient Id not found"});		
+										}
+									})
+								})
+
+								if(validator.isEmpty(attachmentLanguageCode)){
+									myEmitter.emit('checkPatientID');	
+								}else{
+									checkCode(apikey, attachmentLanguageCode, 'LANGUAGES', function(resLanguageCode){
+										if(resLanguageCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+											myEmitter.emit('checkPatientID');
+										}else{
+											res.json({"err_code": 501, "err_msg": "Language Code not found"});
 										}
 									})
 								}

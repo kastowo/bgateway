@@ -147,6 +147,7 @@ var controller = {
       });
     },
     HumanName: function getHumanName(req, res){
+      var humanNameId = req.query._id;
       var personId = req.query.person_id;
       var patientId = req.query.patient_id;
       var relatedPersonId = req.query.related_person_id;
@@ -154,16 +155,20 @@ var controller = {
       //susun query
       var condition = "";
 
+      if(typeof humanNameId !== 'undefined' && humanNameId !== ""){
+        condition += "human_name_id = '" + humanNameId + "' AND ";  
+      }
+
       if(typeof personId !== 'undefined' && personId !== ""){
-        condition += "person_id = '" + personId + "' AND,";  
+        condition += "person_id = '" + personId + "' AND ";  
       }
 
       if(typeof patientId !== 'undefined' && patientId !== ""){
-        condition += "patient_id = '" + patientId + "' AND,";  
+        condition += "patient_id = '" + patientId + "' AND ";  
       }
 
       if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
-        condition += "related_person_id = '" + relatedPersonId + "' AND,";  
+        condition += "related_person_id = '" + relatedPersonId + "' AND ";  
       }
 
       if(condition == ""){
@@ -207,6 +212,7 @@ var controller = {
       });
     },
     ContactPoint: function getContactPoint(req, res){
+      var contactPointId = req.query._id;
       var personId = req.query.person_id;
       var patientId = req.query.patient_id;
       var patientContactId = req.query.patient_contact_id;
@@ -215,20 +221,24 @@ var controller = {
       //susun query
       var condition = "";
 
+      if(typeof contactPointId !== 'undefined' && contactPointId !== ""){
+        condition += "contact_point_id = '" + contactPointId + "' AND ";  
+      }
+
       if(typeof personId !== 'undefined' && personId !== ""){
-        condition += "person_id = '" + personId + "' AND,";  
+        condition += "person_id = '" + personId + "' AND ";  
       }
 
       if(typeof patientId !== 'undefined' && patientId !== ""){
-        condition += "patient_id = '" + patientId + "' AND,";  
+        condition += "patient_id = '" + patientId + "' AND ";  
       }
 
       if(typeof patientContactId !== 'undefined' && patientContactId !== ""){
-        condition += "patient_contact_id = '" + patientContactId + "' AND,";  
+        condition += "patient_contact_id = '" + patientContactId + "' AND ";  
       }
 
       if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
-        condition += "related_person_id = '" + relatedPersonId + "' AND,";  
+        condition += "related_person_id = '" + relatedPersonId + "' AND ";  
       }
 
       if(condition == ""){
@@ -270,6 +280,7 @@ var controller = {
       });
     },
     Address: function getAddress(req, res){
+      var addressId = req.query._id;
       var personId = req.query.person_id;
       var patientId = req.query.patient_id;
       var relatedPersonId = req.query.related_person_id;
@@ -277,16 +288,20 @@ var controller = {
       //susun query
       var condition = "";
 
+      if(typeof addressId !== 'undefined' && addressId !== ""){
+        condition += "address_id = '" + addressId + "' AND ";  
+      }
+
       if(typeof personId !== 'undefined' && personId !== ""){
-        condition += "person_id = '" + personId + "' AND,";  
+        condition += "person_id = '" + personId + "' AND ";  
       }
 
       if(typeof patientId !== 'undefined' && patientId !== ""){
-        condition += "patient_id = '" + patientId + "' AND,";  
+        condition += "patient_id = '" + patientId + "' AND ";  
       }
 
       if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
-        condition += "related_person_id = '" + relatedPersonId + "' AND,";  
+        condition += "related_person_id = '" + relatedPersonId + "' AND ";  
       }
 
       if(condition == ""){
@@ -333,7 +348,7 @@ var controller = {
       });
     },
     Attachment: function getAttachment(req, res){
-      var attachmentId = req.query.attachment_id;
+      var attachmentId = req.query._id;
       var patientId = req.query.patient_id;
       var relatedPersonId = req.query.related_person_id;
 
@@ -341,15 +356,15 @@ var controller = {
       var condition = "";
 
       if(typeof patientId !== 'undefined' && patientId !== ""){
-        condition += "patient_id = '" + patientId + "' AND,";  
+        condition += "patient_id = '" + patientId + "' AND ";  
       }
 
       if(typeof attachmentId !== 'undefined' && attachmentId !== ""){
-        condition += "attachment_id = '" + attachmentId + "' AND,";  
+        condition += "attachment_id = '" + attachmentId + "' AND ";  
       }
 
       if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
-        condition += "related_person_id = '" + relatedPersonId + "' AND,";  
+        condition += "related_person_id = '" + relatedPersonId + "' AND ";  
       }
 
       if(condition == ""){
@@ -1354,10 +1369,25 @@ var controller = {
         " VALUES ('"+attachment_id+"', " + values.slice(0, -1) + ")";
       
       db.upsert(query,function(succes){
+        var arrAttachment = [];
         var query = "SELECT attachment_id, attachment_url, attachment_content_type, attachment_language, attachment_data, attachment_size, attachment_hash, attachment_title, attachment_creation FROM BACIRO_FHIR.ATTACHMENT WHERE attachment_id = '" + attachment_id + "' ";
         db.query(query,function(dataJson){
           rez = lowercaseObject(dataJson);
-          res.json({"err_code":0,"data":rez});
+          for(i = 0; i < rez.length; i++){
+            var Attachment = {};
+            Attachment.id = rez[i].attachment_id;
+            Attachment.url = rez[i].attachment_url;
+            Attachment.contentType = rez[i].attachment_content_type;
+            Attachment.language = rez[i].attachment_language;
+            Attachment.data = rez[i].attachment_data;
+            Attachment.size = rez[i].attachment_size;
+            Attachment.hash = rez[i].attachment_hash;
+            Attachment.title = rez[i].attachment_title;
+            Attachment.creation = rez[i].attachment_creation;
+
+            arrAttachment[i] = Attachment;
+          }
+          res.json({"err_code":0,"data": arrAttachment});
         },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addAttachment"});
         });
@@ -2522,76 +2552,6 @@ var controller = {
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAddressType"});
       });
     },
-    attachment: function updateAttachment(req, res){
-      var _id = req.params._id;
-      var attachment_content_type = req.body.content_type;
-      var attachment_language = req.body.language;
-      var attachment_url = req.body.url;
-      var attachment_size = req.body.size;
-      var attachment_data = req.body.data;
-      var attachment_hash = req.body.hash;
-      var attachment_title = req.body.title;
-      var attachment_creation = req.body.creation;
-      
-      //susun query update
-      var column = "";
-      var values = "";
-
-      if(typeof attachment_content_type !== 'undefined'){
-        column += 'attachment_content_type,';
-        values += "'" +attachment_content_type +"',";
-      }
-
-      if(typeof attachment_language !== 'undefined'){
-        column += 'attachment_language,';
-        values += "'" +attachment_language +"',";
-      }
-
-      if(typeof attachment_url !== 'undefined'){
-        column += 'attachment_url,';
-        values += "'" +attachment_url +"',";
-      }
-
-      if(typeof attachment_size !== 'undefined'){
-        column += 'attachment_size,';
-        values += "" +attachment_size +",";
-      }
-
-      if(typeof attachment_data !== 'undefined'){
-        column += 'attachment_data,';
-        values += "'" +attachment_data +"',";
-      }
-
-      if(typeof attachment_hash !== 'undefined'){
-        column += 'attachment_hash,';
-        values += "'" +attachment_hash +"',";
-      }
-
-      if(typeof attachment_title !== 'undefined'){
-        column += 'attachment_title,';
-        values += "'" +attachment_title +"',";
-      }
-
-      if(typeof attachment_creation !== 'undefined'){
-        column += 'attachment_creation,';
-        values += "to_date('" + attachment_creation +"', 'yyyy-MM-dd'),";
-      }
-
-      var query = "UPSERT INTO BACIRO_FHIR.ATTACHMENT(attachment_id," + column.slice(0, -1) + ") SELECT attachment_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.ATTACHMENT WHERE attachment_id = " + _id;
-      
-      db.upsert(query,function(succes){
-        var query = "SELECT attachment_id, attachment_content_type, attachment_language, attachment_data, attachment_size, attachment_hash, attachment_title, attachment_creation FROM BACIRO_FHIR.ATTACHMENT WHERE attachment_id = "+ _id;
-
-        db.query(query,function(dataJson){
-          rez = lowercaseObject(dataJson);
-          res.json({"err_code":0,"data":rez});
-        },function(e){
-          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateAttachment"});
-        });
-      },function(e){
-          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAttachment"});
-      });
-    },
     identifier: function updateIdentifier(req, res){
       var _id = req.params._id;
       var domainResource = req.params.dr;
@@ -3017,6 +2977,97 @@ var controller = {
           res.json({"err_code":0,"data": arrAddress});
         },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAddress"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAddress"});
+      });
+    },
+    attachment: function updateAttachment(req, res){
+      var _id = req.params._id;
+      var domainResource = req.params.dr;
+
+      var attachment_content_type = req.body.content_type;
+      var attachment_language = req.body.language;
+      var attachment_url = req.body.url;
+      var attachment_size = req.body.size;
+      var attachment_data = req.body.data;
+      var attachment_hash = req.body.hash;
+      var attachment_title = req.body.title;
+      var attachment_creation = req.body.creation;
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof attachment_content_type !== 'undefined'){
+        column += 'attachment_content_type,';
+        values += "'" +attachment_content_type +"',";
+      }
+
+      if(typeof attachment_language !== 'undefined'){
+        column += 'attachment_language,';
+        values += "'" +attachment_language +"',";
+      }
+
+      if(typeof attachment_url !== 'undefined'){
+        column += 'attachment_url,';
+        values += "'" +attachment_url +"',";
+      }
+
+      if(typeof attachment_size !== 'undefined'){
+        column += 'attachment_size,';
+        values += "" +attachment_size +",";
+      }
+
+      if(typeof attachment_data !== 'undefined'){
+        column += 'attachment_data,';
+        values += "'" +attachment_data +"',";
+      }
+
+      if(typeof attachment_hash !== 'undefined'){
+        column += 'attachment_hash,';
+        values += "'" +attachment_hash +"',";
+      }
+
+      if(typeof attachment_title !== 'undefined'){
+        column += 'attachment_title,';
+        values += "'" +attachment_title +"',";
+      }
+
+      if(typeof attachment_creation !== 'undefined'){
+        column += 'attachment_creation,';
+        values += "to_date('" + attachment_creation +"', 'yyyy-MM-dd'),";
+      }
+
+      var arrResource = domainResource.split('|');
+      var fieldResource = arrResource[0];
+      var valueResource = arrResource[1];
+      var condition = "attachment_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+
+      var query = "UPSERT INTO BACIRO_FHIR.ATTACHMENT(attachment_id," + column.slice(0, -1) + ") SELECT attachment_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.ATTACHMENT WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var arrAttachment = [];
+        var query = "SELECT attachment_id, attachment_url, attachment_content_type, attachment_language, attachment_data, attachment_size, attachment_hash, attachment_title, attachment_creation FROM BACIRO_FHIR.ATTACHMENT WHERE " + condition;
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          for(i = 0; i < rez.length; i++){
+            var Attachment = {};
+            Attachment.id = rez[i].attachment_id;
+            Attachment.url = rez[i].attachment_url;
+            Attachment.contentType = rez[i].attachment_content_type;
+            Attachment.language = rez[i].attachment_language;
+            Attachment.data = rez[i].attachment_data;
+            Attachment.size = rez[i].attachment_size;
+            Attachment.hash = rez[i].attachment_hash;
+            Attachment.title = rez[i].attachment_title;
+            Attachment.creation = rez[i].attachment_creation;
+
+            arrAttachment[i] = Attachment;
+          }
+          res.json({"err_code":0,"data": arrAttachment});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAttachment"});
         });
       },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAddress"});
