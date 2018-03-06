@@ -533,9 +533,10 @@ var controller = {
 																																contactTeleponJoin = contactTeleponJoin.concat(patientContact.data[k].telecom);
 																															}
 																															if(typeof patientContact.data[0].telecom !== 'undefined'){
-																																patientContact.data[0].telecom = contactTeleponJoin; // set ke ke data pertama karena sudah digabung
+																																patientContact.data[0].telecom = removeDuplicates(contactTeleponJoin); // set ke ke data pertama karena sudah digabung
 																															}
-																															objectPatient.contact = removeDuplicates(patientContact.data);
+																															
+																															objectPatient.contact = patientContact.data;
 																															objectPatient.animal = patient.animal;
 																															objectPatient.managingOrganization = patient.managingOrganization;
 
@@ -3411,6 +3412,543 @@ var controller = {
 					}else{
 						res.json({"err_code": err_code, "err_msg": err_msg});
 					}
+				},
+				contact: function addContact(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+
+					var err_code = 0;
+					var err_msg = "";
+
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					//contact
+					if(typeof req.body.relationship !== 'undefined'){
+						contactRelationshipCode =  req.body.relationship.trim().toUpperCase();
+						if(validator.isEmpty(contactRelationshipCode)){
+							err_code = 2;
+							err_msg = "Contact relationship is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add key 'relationship' in json request.";
+					}
+
+					//contactNameUseCode
+					if(typeof req.body.name.use !== 'undefined'){
+						contactNameUseCode =  req.body.name.use.trim().toLowerCase();
+						if(validator.isEmpty(contactNameUseCode)){
+							err_code = 2;
+							err_msg = "Contact name use code is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'use' in json name request.";
+					}
+
+					//contactNameText
+					if(typeof req.body.name.text !== 'undefined'){
+						contactNameText =  req.body.name.text;
+						if(validator.isEmpty(contactNameText)){
+							err_code = 2;
+							err_msg = "Contact name text is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'text' in json name request.";
+					}
+
+					//contactNameFamily
+					if(typeof req.body.name.family !== 'undefined'){
+						contactNameFamily =  req.body.name.family;
+						if(validator.isEmpty(contactNameFamily)){
+							err_code = 2;
+							err_msg = "Contact name family is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'family' in json name request.";
+					}
+
+					//contactNameGiven
+					if(typeof req.body.name.given !== 'undefined'){
+						contactNameGiven =  req.body.name.given;
+						if(validator.isEmpty(contactNameGiven)){
+							contactNameGiven = "";
+						}
+					}else{
+						contactNameGiven = "";
+					}
+
+					//contactNamePrefix
+					if(typeof req.body.name.prefix !== 'undefined'){
+						contactNamePrefix =  req.body.name.prefix;
+						if(validator.isEmpty(contactNamePrefix)){
+							if(!typeof req.body.gender !== 'undefined'){
+								contactGender = req.body.gender.trim().toLowerCase();
+								if( contactGender == 'male'){
+									contactNamePrefix =  'Mr';
+								}else if(contactGender == 'female'){
+									contactNamePrefix = 'Mrs';
+								}else{
+									contactNamePrefix = "";
+								}		
+							}	
+						}
+					}else{
+						contactNamePrefix = "";
+					}
+
+					//contactNameSuffix
+					if(typeof req.body.name.suffix !== 'undefined'){
+						contactNameSuffix =  req.body.name.suffix;
+						if(validator.isEmpty(contactNameSuffix)){
+							contactNameSuffix = "";
+						}
+					}else{
+						contactNameSuffix = "";
+					}
+
+					//contactNamePeriod
+					if(typeof req.body.name.period !== 'undefined'){
+						var period = req.body.name.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							contactPeriodStart = arrPeriod[0];
+							contactPeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(contactPeriodStart) && !regex.test(contactPeriodEnd)){
+								err_code = 2;
+								err_msg = "Contact Period invalid date format.";
+							}	
+						}else{
+							contactPeriodStart = "";
+							contactPeriodEnd = "";
+						}
+					}else{
+						contactPeriodStart = "";
+						contactPeriodEnd = "";
+					}
+
+					//contactTelecomSystem
+					if(typeof req.body.telecom.system !== 'undefined'){
+						var contactTelecomSystemCode = req.body.telecom.system.trim().toLowerCase();
+						if(validator.isEmpty(contactTelecomSystemCode)){
+							err_code = 2;
+							err_msg = "Contact Telecom system is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'system' in json telecom request.";
+					}
+
+					//contactTelecomValue
+					if(typeof req.body.telecom.value !== 'undefined'){
+						var contactTelecomValue = req.body.telecom.value;
+						if(validator.isEmpty(contactTelecomValue)){
+							err_code = 2;
+							err_msg = "Contact Telecom value is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'value' in json telecom request.";
+					}
+
+					//contactTelecomUseCode
+					if(typeof req.body.telecom.use !== 'undefined'){
+						var contactTelecomUseCode = req.body.telecom.use.trim().toLowerCase();
+						if(validator.isEmpty(contactTelecomUseCode)){
+							err_code = 2;
+							err_msg = "Contact Telecom use code is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'use' in json contact telecom request.";
+					}
+
+					//contactTelecomRank
+					if(typeof req.body.telecom.rank !== 'undefined'){
+						var contactTelecomRank = req.body.telecom.rank;
+						
+						if(!validator.isInt(contactTelecomRank)){
+							err_code = 2;
+							err_msg = "Contact Telecom rank must be number.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'rank' in json telecom request.";
+					}
+
+					//contactTelecomPeriod
+					if(typeof req.body.telecom.period !== 'undefined'){
+						var period = req.body.telecom.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							contactTelecomPeriodStart = arrPeriod[0];
+							contactTelecomPeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(contactTelecomPeriodStart) && !regex.test(contactTelecomPeriodEnd)){
+								err_code = 2;
+								err_msg = "Contact Period invalid date format.";
+							}	
+						}else{
+							contactTelecomPeriodStart = "";
+							contactTelecomPeriodEnd = "";
+						}
+					}else{
+						contactTelecomPeriodStart = "";
+						contactTelecomPeriodEnd = "";
+					}
+
+					//contact address use code
+					if(typeof req.body.address.use !== 'undefined'){
+						var contactAddressUseCode = req.body.address.use;
+						if(validator.isEmpty(contactAddressUseCode)){
+							err_code = 2;
+							err_msg = "Contact address use code is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'use' in json contact address request.";
+					}
+
+					//contact address type code
+					if(typeof req.body.address.type !== 'undefined'){
+						var contactAddressTypeCode = req.body.address.type;
+						if(validator.isEmpty(contactAddressTypeCode)){
+							err_code = 2;
+							err_msg = "Contact address type code is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'type' in json contact address request.";
+					}
+
+					//contact address text
+					if(typeof req.body.address.text !== 'undefined'){
+						var contactAddressText = req.body.address.text;
+						if(validator.isEmpty(contactAddressText)){
+							err_code = 2;
+							err_msg = "Contact address text is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'text' in json contact address request.";
+					}
+
+					//contact address line
+					if(typeof req.body.address.line !== 'undefined'){
+						var contactAddressLine = req.body.address.line;
+						if(validator.isEmpty(contactAddressLine)){
+							err_code = 2;
+							err_msg = "Contact address line is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'line' in json contact address request.";
+					}
+
+					//contact address city
+					if(typeof req.body.address.city !== 'undefined'){
+						var contactAddressCity = req.body.address.city;
+						if(validator.isEmpty(contactAddressCity)){
+							err_code = 2;
+							err_msg = "Contact address city is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'city' in json contact address request.";
+					}
+
+					//contact address district
+					if(typeof req.body.address.district !== 'undefined'){
+						var contactAddressDistrict = req.body.address.district;
+						if(validator.isEmpty(contactAddressDistrict)){
+							contactAddressDistrict = "";
+						}
+					}else{
+						contactAddressDistrict = "";
+					}
+
+					//contact address city
+					if(typeof req.body.address.state !== 'undefined'){
+						var contactAddressState = req.body.address.state;
+						if(validator.isEmpty(contactAddressState)){
+							err_code = 2;
+							err_msg = "Contact address state is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'state' in json contact address request.";
+					}
+
+					//contact address postal code
+					if(typeof req.body.address.postal_code !== 'undefined'){
+						var contactAddressPostalCode = req.body.address.postal_code;
+						if(validator.isEmpty(contactAddressPostalCode)){
+							err_code = 2;
+							err_msg = "Contact address postal code is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'postal_code' in json contact address request.";
+					}
+
+					//contact address country
+					if(typeof req.body.address.country !== 'undefined'){
+						var contactAddressCountry = req.body.address.country;
+						if(validator.isEmpty(contactAddressCountry)){
+							err_code = 2;
+							err_msg = "Contact address country is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'country' in json contact address request.";
+					}
+					
+					//contact address period
+					if(typeof req.body.address.period !== 'undefined'){
+						var period = req.body.address.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							contactAddressPeriodStart = arrPeriod[0];
+							contactAddressPeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(contactAddressPeriodStart) && !regex.test(contactAddressPeriodEnd)){
+								err_code = 2;
+								err_msg = "Contact Address Period invalid date format.";
+							}	
+						}else{
+							contactAddressPeriodStart = "";
+							contactAddressPeriodEnd = "";
+						}
+					}else{
+						contactAddressPeriodStart = "";
+						contactAddressPeriodEnd = "";
+					}
+
+					//contact gender
+					if(typeof req.body.gender !== 'undefined'){
+						var contactGender = req.body.gender;
+						if(validator.isEmpty(contactGender)){
+							err_code = 2;
+							err_msg = "Contact gender is required.";
+						}
+					}else{
+						err_code = 1;
+						err_msg = "Please add sub-key 'gender' in json contact request.";
+					}
+
+					//contact Organization that is associated with the contact
+					if(typeof req.body.organization_id !== 'undefined'){
+						var contactOrganizationId = req.body.organization_id;
+						if(validator.isEmpty(contactOrganizationId)){
+							contactOrganizationId = "";
+						}
+					}else{
+						contactOrganizationId = "";
+					}
+
+					//contact period
+					if(typeof req.body.period !== 'undefined'){
+						var period = req.body.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							contactPeriodStart = arrPeriod[0];
+							contactPeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(contactPeriodStart) && !regex.test(contactPeriodEnd)){
+								err_code = 2;
+								err_msg = "Contact Period invalid date format.";
+							}	
+						}else{
+							contactPeriodStart = "";
+							contactPeriodEnd = "";
+						}
+					}else{
+						contactPeriodStart = "";
+						contactPeriodEnd = "";
+					}
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+									if(resPatientID.err_code > 0){
+										checkCode(apikey, contactRelationshipCode, 'CONTACT_ROLE', function(resRelationship){
+											if(resRelationship.err_code > 0){
+												checkCode(apikey, contactNameUseCode, 'NAME_USE', function(resContactNameUse){
+													if(resContactNameUse.err_code > 0){
+														checkCode(apikey, contactTelecomSystemCode, 'CONTACT_POINT_SYSTEM', function(resContactTelecomSystem){
+															if(resContactTelecomSystem.err_code > 0){
+																checkCode(apikey, contactTelecomUseCode, 'CONTACT_POINT_USE', function(resContactTelecomUse){
+																	if(resContactTelecomUse.err_code > 0){
+																		checkCode(apikey, contactAddressUseCode, 'ADDRESS_USE', function(resContactAddressUse){
+																			if(resContactAddressUse.err_code > 0){
+																				checkCode(apikey, contactAddressTypeCode, 'ADDRESS_TYPE', function(resContactAddressType){
+																					if(resContactAddressType.err_code > 0){
+																						checkCode(apikey, contactGender, 'ADMINISTRATIVE_GENDER', function(resContactGender){
+																							if(resContactGender.err_code > 0){
+																								checkUniqeValue(apikey, "CONTACT_POINT_VALUE|" + contactTelecomValue, 'CONTACT_POINT', function(resContactTelecomValue){
+																									if(resContactTelecomValue.err_code == 0){
+																										myEmitter.once("InsertContact", function(){
+																											//proses insert
+																											//set uniqeId
+																											var patientContactId = 'pc' + uniqid.time();
+																						  				var contactHumanNameId = 'hn' + uniqid.time();
+																						  				var contactAddressId = 'add' + uniqid.time();
+																						  				var contactTelecomId = 'cp' + uniqid.time();
+
+																						  				//contact human name
+																						  				dataHumanName = {
+																						  													"id": contactHumanNameId,
+																						  													"use": contactNameUseCode,
+																						  													"text": contactNamePrefix + ' ' + contactNameText + ' ' + contactNameSuffix, 
+																						  													"family": contactNameFamily,
+																						  													"given": contactNameGiven,
+																						  													"prefix": contactNamePrefix,
+																						  													"suffix": contactNameSuffix,
+																						  													"period_start": contactPeriodStart,
+																						  													"period_end": contactPeriodEnd
+																						  												}
+
+																						  				ApiFHIR.post('humanName', {"apikey": apikey}, {body: dataHumanName, json: true}, function(error, response, body){
+																						  					humanName2 = body;
+																						  					if(humanName2.err_code > 0){
+																						  						res.json(humanName2);	
+																						  					}
+																						  				})
+
+																						  				//contact_address
+																						  				dataAddress = {
+																						  												"id": contactAddressId,
+																				  														"use": contactAddressUseCode,
+																				  														"type": contactAddressTypeCode,
+																				  														"text": contactAddressText,
+																				  														"line": contactAddressLine,
+																				  														"city": contactAddressCity,
+																				  														"district": contactAddressDistrict,
+																				  														"state": contactAddressState,
+																				  														"postal_code": contactAddressPostalCode,
+																				  														"country": contactAddressCountry,
+																				  														"period_start": contactAddressPeriodStart,
+																				  														"period_end": contactAddressPeriodEnd
+																				  													}
+
+																						  				ApiFHIR.post('address', {"apikey": apikey}, {body: dataAddress, json: true}, function(error, response, body){
+																						  					address2 = body;
+																						  					if(address2.err_code > 0){
+																						  						res.json(address2);	
+																						  					}
+																						  				})
+
+																						  				dataPatientContact = {
+																									  												"id": patientContactId,
+																							  														"relationship": contactRelationshipCode,
+																							  														"human_name_id": contactHumanNameId,
+																							  														"address_id": contactAddressId,
+																							  														"gender": contactGender,
+																							  														"organization_id": contactOrganizationId,
+																							  														"period_start": contactPeriodStart,
+																							  														"period_end": contactPeriodEnd,
+																							  														"patient_id": patientId
+																							  													}
+
+																						  				ApiFHIR.post('patientContact', {"apikey": apikey}, {body: dataPatientContact, json: true}, function(error, response, body){
+																						  					patientContact = body;
+																						  					if(patientContact.err_code > 0){
+																						  						res.json(patientContact);	
+																						  					}
+																						  				})
+
+																						  				//contact contact_point
+																						  				dataContactPoint = {
+																						  														"id": contactTelecomId,
+																						  														"system": contactTelecomSystemCode,
+																						  														"value": contactTelecomValue,
+																						  														"use": contactTelecomUseCode,
+																						  														"rank": contactTelecomRank,
+																						  														"period_start": contactTelecomPeriodStart,
+																						  														"period_end": contactTelecomPeriodEnd,
+																						  														"patient_contact_id": patientContactId
+																						  													}
+
+																						  				ApiFHIR.post('contactPoint', {"apikey": apikey}, {body: dataContactPoint, json: true}, function(error, response, body){
+																						  					contactPoint2 = body;
+																						  					if(contactPoint2.err_code > 0){
+																						  						res.json(contactPoint2);	
+																						  					}
+																						  				})
+																					  					res.json({"err_code": 0, "err_msg": "Patient Contact has been add.", "data": [{"_id": patientContactId}]});
+																										})
+																										//contactOrganizationId
+																										if(!validator.isEmpty(contactOrganizationId)){
+																											checkUniqeValue(apikey, "ORGANIZATION_ID|" + contactOrganizationId, 'ORGANIZATION', function(resContacOrg){
+																												if(resContacOrg.err_code > 0){
+																													myEmitter.emit('InsertContact');
+																												}else{
+																													res.json({"err_code": 521, "err_msg": "Contact organization id not found"});
+																												}
+																											})
+																										}else{
+																											myEmitter.emit('InsertContact');
+																										}										
+																									}else{
+																										res.json({"err_code": 508, "err_msg": "Contact telecom value already exist."});			
+																									}
+																								})
+																							}else{
+																								res.json({"err_code": 515, "err_msg": "Contact gender code not found"});		
+																							}
+																						})
+																					}else{
+																						res.json({"err_code": 514, "err_msg": "Contact address type code not found"});
+																					}
+																				})
+																			}else{
+																				res.json({"err_code": 513, "err_msg": "Contact address use code not found"});					
+																			}
+																		})
+																	}else{
+																		res.json({"err_code": 512, "err_msg": "Contact telecom use code not found"});			
+																	}
+																})
+															}else{
+																res.json({"err_code": 511, "err_msg": "Contact telecom system code not found"});	
+															}
+														})
+													}else{
+														res.json({"err_code": 510, "err_msg": "Contact name use code not found"});		
+													}
+												})
+											}else{
+												res.json({"err_code": 509, "err_msg": "Relationship code not found"});		
+											}
+										})
+									}else{
+										res.json({"err_code": 501, "err_msg": "Patient Id not found"});	
+									}
+								})	
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
 				} 	
 			},
 			put: {
@@ -4835,6 +5373,560 @@ var controller = {
 											myEmitter.emit('checkPatientID');
 										}else{
 											res.json({"err_code": 501, "err_msg": "Language Code not found"});
+										}
+									})
+								}
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": err_code, "err_msg": err_msg});
+					}
+				},
+				contact: function updateContact(req, res){
+					var ipAddres = req.connection.remoteAddress;
+					var apikey = req.params.apikey;
+					var regex = new RegExp("([0-9]{4}[-](0[1-9]|1[0-2])[-]([0-2]{1}[0-9]{1}|3[0-1]{1})|([0-2]{1}[0-9]{1}|3[0-1]{1})[-](0[1-9]|1[0-2])[-][0-9]{4})");
+					var patientId = req.params.patient_id;
+					var contactId = req.params.contact_id;
+
+					var err_code = 0;
+					var err_msg = "";
+
+					var dataHumanName = {};
+					var dataAddress = {};
+					var dataContact = {};
+					var dataContactPoint = {};
+
+					//input check 
+					if(typeof patientId !== 'undefined'){
+						if(validator.isEmpty(patientId)){
+							err_code = 2;
+							err_msg = "Patient id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Patient id is required";
+					}
+
+					//input check 
+					if(typeof contactId !== 'undefined'){
+						if(validator.isEmpty(contactId)){
+							err_code = 2;
+							err_msg = "Contact id is required";
+						}
+					}else{
+						err_code = 2;
+						err_msg = "Contact id is required";
+					}
+
+					//contact
+					if(typeof req.body.relationship !== 'undefined'){
+						contactRelationshipCode =  req.body.relationship.trim().toUpperCase();
+						if(validator.isEmpty(contactRelationshipCode)){
+							err_code = 2;
+							err_msg = "Contact relationship is required.";
+						}else{
+							dataContact.relationship = contactRelationshipCode;
+						}
+					}else{
+						contactRelationshipCode = "";
+					}
+
+					//contactNameUseCode
+					if(typeof req.body.name !== 'undefined'){
+						if(typeof req.body.name.use !== 'undefined'){
+							contactNameUseCode =  req.body.name.use.trim().toLowerCase();
+							if(validator.isEmpty(contactNameUseCode)){
+								err_code = 2;
+								err_msg = "Contact name use code is required.";
+							}else{
+								dataHumanName.use = contactNameUseCode;
+							}
+						}else{
+							contactNameUseCode = "";
+						}
+
+						//contactNameText
+						if(typeof req.body.name.text !== 'undefined'){
+							contactNameText =  req.body.name.text;
+							if(validator.isEmpty(contactNameText)){
+								err_code = 2;
+								err_msg = "Contact name text is required.";
+							}else{
+								dataHumanName.text = contactNameText;
+							}
+						}
+
+						//contactNameFamily
+						if(typeof req.body.name.family !== 'undefined'){
+							contactNameFamily =  req.body.name.family;
+							if(validator.isEmpty(contactNameFamily)){
+								err_code = 2;
+								err_msg = "Contact name family is required.";
+							}else{
+								dataHumanName.family = contactNameFamily;
+							}
+						}
+
+						//contactNameGiven
+						if(typeof req.body.name.given !== 'undefined'){
+							contactNameGiven =  req.body.name.given;
+							if(validator.isEmpty(contactNameGiven)){
+								contactNameGiven = "";
+							}
+
+							dataHumanName.given = contactNameGiven;
+						}
+
+						//contactNamePrefix
+						if(typeof req.body.name.prefix !== 'undefined'){
+							contactNamePrefix =  req.body.name.prefix;
+							dataHumanName.prefix = contactNamePrefix;	
+						}
+
+						//contactNameSuffix
+						if(typeof req.body.name.suffix !== 'undefined'){
+							contactNameSuffix =  req.body.name.suffix;
+							dataHumanName.suffix = contactNameSuffix;		
+						}
+
+						//contactNamePeriod
+						if(typeof req.body.name.period !== 'undefined'){
+							var period = req.body.name.period;
+							if(period.indexOf("to") > 0){
+								arrPeriod = period.split("to");
+								contactPeriodStart = arrPeriod[0];
+								contactPeriodEnd = arrPeriod[1];
+								
+								if(!regex.test(contactPeriodStart) && !regex.test(contactPeriodEnd)){
+									err_code = 2;
+									err_msg = "Contact Period invalid date format.";
+								}	
+							}else{
+								contactPeriodStart = "";
+								contactPeriodEnd = "";
+							}
+
+							dataHumanName.period_start = contactPeriodStart;
+							dataHumanName.period_end = contactPeriodEnd;
+						}
+					}else{
+						contactNameUseCode = "";
+					}
+					
+					//contactTelecomSystem
+					if(typeof req.body.telecom !== 'undefined'){
+						if(typeof req.body.telecom.system !== 'undefined'){
+							var contactTelecomSystemCode = req.body.telecom.system.trim().toLowerCase();
+							if(validator.isEmpty(contactTelecomSystemCode)){
+								err_code = 2;
+								err_msg = "Contact Telecom system is required.";
+							}else{
+								dataContactPoint.system = contactTelecomSystemCode;
+							}
+						}else{
+							contactTelecomSystemCode = "";
+						}
+
+						//contactTelecomValue
+						if(typeof req.body.telecom.value !== 'undefined'){
+							var contactTelecomValue = req.body.telecom.value;
+							if(validator.isEmpty(contactTelecomValue)){
+								err_code = 2;
+								err_msg = "Contact Telecom value is required.";
+							}else{
+								dataContactPoint.value = contactTelecomValue;
+							}
+						}else{
+							contactTelecomValue = "";
+						}
+
+						//contactTelecomUseCode
+						if(typeof req.body.telecom.use !== 'undefined'){
+							var contactTelecomUseCode = req.body.telecom.use.trim().toLowerCase();
+							if(validator.isEmpty(contactTelecomUseCode)){
+								err_code = 2;
+								err_msg = "Contact Telecom use code is required.";
+							}else{
+								dataContactPoint.use = contactTelecomUseCode;
+							}
+						}else{
+							contactTelecomUseCode = "";	
+						}
+
+						//contactTelecomRank
+						if(typeof req.body.telecom.rank !== 'undefined'){
+							var contactTelecomRank = req.body.telecom.rank;
+							
+							if(!validator.isInt(contactTelecomRank)){
+								err_code = 2;
+								err_msg = "Contact Telecom rank must be number.";
+							}else{
+								dataContactPoint.rank = contactTelecomRank;
+							}
+						}
+
+						//contactTelecomPeriod
+						if(typeof req.body.telecom.period !== 'undefined'){
+							var period = req.body.telecom.period;
+							if(period.indexOf("to") > 0){
+								arrPeriod = period.split("to");
+								contactTelecomPeriodStart = arrPeriod[0];
+								contactTelecomPeriodEnd = arrPeriod[1];
+								
+								if(!regex.test(contactTelecomPeriodStart) && !regex.test(contactTelecomPeriodEnd)){
+									err_code = 2;
+									err_msg = "Contact Period invalid date format.";
+								}	
+							}else{
+								contactTelecomPeriodStart = "";
+								contactTelecomPeriodEnd = "";
+							}
+
+							dataContactPoint.period_start = contactTelecomPeriodStart;
+							dataContactPoint.period_end = contactTelecomPeriodEnd;
+						}
+					}else{
+						contactTelecomSystemCode = "";
+						contactTelecomValue = "";
+						contactTelecomUseCode = "";	
+					}
+
+					//contact address use code
+					if(typeof req.body.address !== 'undefined'){
+						if(typeof req.body.address.use !== 'undefined'){
+							var contactAddressUseCode = req.body.address.use;
+							if(validator.isEmpty(contactAddressUseCode)){
+								err_code = 2;
+								err_msg = "Contact address use code is required.";
+							}else{
+								dataAddress.use = contactAddressUseCode;
+							}
+						}else{
+							contactAddressUseCode = "";
+						}
+
+						//contact address type code
+						if(typeof req.body.address.type !== 'undefined'){
+							var contactAddressTypeCode = req.body.address.type;
+							if(validator.isEmpty(contactAddressTypeCode)){
+								err_code = 2;
+								err_msg = "Contact address type code is required.";
+							}else{
+								dataAddress.type = contactAddressTypeCode;
+							}
+						}else{
+							contactAddressTypeCode = "";
+						}
+
+						//contact address text
+						if(typeof req.body.address.text !== 'undefined'){
+							var contactAddressText = req.body.address.text;
+							if(validator.isEmpty(contactAddressText)){
+								err_code = 2;
+								err_msg = "Contact address text is required.";
+							}else{
+								dataAddress.text = contactAddressText;
+							}
+						}
+
+						//contact address line
+						if(typeof req.body.address.line !== 'undefined'){
+							var contactAddressLine = req.body.address.line;
+							if(validator.isEmpty(contactAddressLine)){
+								err_code = 2;
+								err_msg = "Contact address line is required.";
+							}else{
+								dataAddress.line = contactAddressLine;
+							}
+						}
+
+						//contact address city
+						if(typeof req.body.address.city !== 'undefined'){
+							var contactAddressCity = req.body.address.city;
+							if(validator.isEmpty(contactAddressCity)){
+								err_code = 2;
+								err_msg = "Contact address city is required.";
+							}else{
+								dataAddress.city = contactAddressCity;
+							}
+						}
+
+						//contact address district
+						if(typeof req.body.address.district !== 'undefined'){
+							var contactAddressDistrict = req.body.address.district;
+							dataAddress.district = contactAddressDistrict;
+						}
+
+						//contact address state
+						if(typeof req.body.address.state !== 'undefined'){
+							var contactAddressState = req.body.address.state;
+							if(validator.isEmpty(contactAddressState)){
+								err_code = 2;
+								err_msg = "Contact address state is required.";
+							}else{
+								dataAddress.state = contactAddressState;
+							}
+						}
+
+						//contact address postal code
+						if(typeof req.body.address.postal_code !== 'undefined'){
+							var contactAddressPostalCode = req.body.address.postal_code;
+							if(!validator.isPostalCode(contactAddressPostalCode, 'any')){
+								err_code = 2;
+								err_msg = "Contact address postal code invalid format.";
+							}else{
+								dataAddress.postal_code = contactAddressPostalCode;
+							}
+						}
+
+						//contact address country
+						if(typeof req.body.address.country !== 'undefined'){
+							var contactAddressCountry = req.body.address.country;
+							if(validator.isEmpty(contactAddressCountry)){
+								err_code = 2;
+								err_msg = "Contact address country is required.";
+							}else{
+								dataAddress.country = contactAddressCountry;
+							}
+						}
+						
+						//contact address period
+						if(typeof req.body.address.period !== 'undefined'){
+							var period = req.body.address.period;
+							if(period.indexOf("to") > 0){
+								arrPeriod = period.split("to");
+								contactAddressPeriodStart = arrPeriod[0];
+								contactAddressPeriodEnd = arrPeriod[1];
+								
+								if(!regex.test(contactAddressPeriodStart) && !regex.test(contactAddressPeriodEnd)){
+									err_code = 2;
+									err_msg = "Contact Address Period invalid date format.";
+								}	
+							}else{
+								contactAddressPeriodStart = "";
+								contactAddressPeriodEnd = "";
+							}
+							dataAddress.period_start = contactAddressPeriodStart;
+							dataAddress.period_end = contactAddressPeriodEnd;
+						}
+					}else{
+						contactAddressUseCode = "";
+						contactAddressTypeCode = "";
+					}
+
+					//contact gender
+					if(typeof req.body.gender !== 'undefined'){
+						var contactGender = req.body.gender;
+						if(validator.isEmpty(contactGender)){
+							err_code = 2;
+							err_msg = "Contact gender is required.";
+						}else{
+							dataContact.gender = contactGender;
+						}
+					}else{
+						contactGender = "";
+					}
+
+					//contact Organization that is associated with the contact
+					if(typeof req.body.organization_id !== 'undefined'){
+						var contactOrganizationId = req.body.organization_id;
+						dataContact.organization = contactOrganizationId;
+					}else{
+						contactOrganizationId = "";
+					}
+
+					//contact period
+					if(typeof req.body.period !== 'undefined'){
+						var period = req.body.period;
+						if(period.indexOf("to") > 0){
+							arrPeriod = period.split("to");
+							contactPeriodStart = arrPeriod[0];
+							contactPeriodEnd = arrPeriod[1];
+							
+							if(!regex.test(contactPeriodStart) && !regex.test(contactPeriodEnd)){
+								err_code = 2;
+								err_msg = "Contact Period invalid date format.";
+							}	
+						}else{
+							contactPeriodStart = "";
+							contactPeriodEnd = "";
+						}
+						dataContact.period_start = contactPeriodStart;
+						dataContact.period_end = contactPeriodEnd;
+					}
+
+					if(err_code == 0){
+						//check apikey
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								myEmitter.prependListener('checkPatientID', function(){
+									checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
+										if(resPatientID.err_code > 0){
+											checkUniqeValue(apikey, "PATIENT_CONTACT_ID|" + contactId, 'PATIENT_CONTACT', function(resContactID){
+												if(resContactID.err_code > 0){
+													//human_name
+													
+														qString = {};
+										  			qString._id = contactId;
+											  		seedPhoenixFHIR.path.GET = {
+															"PatientContact" : {
+																"location": "%(apikey)s/PatientContact",
+																"query": qString
+															}
+														}
+
+														var ApiFHIR = new Apiclient(seedPhoenixFHIR);
+
+														ApiFHIR.get('PatientContact', {"apikey": apikey}, {}, function(error, response, body){
+															var patientContact = JSON.parse(body);
+															var humanNameId = patientContact.data[0].name.id;
+															var addressId = 	patientContact.data[0].address.id;
+															var contactPointId = 	patientContact.data[0].telecom[0].id;
+
+															if(typeof req.body.name !== 'undefined'){
+																ApiFHIR.put('humanName', {"apikey": apikey, "_id": humanNameId, "dr": ""}, {body: dataHumanName, json: true}, function(error, response, body){
+											  					humanName = body;
+											  					if(humanName.err_code > 0){
+											  						res.json(humanName);	
+											  					}else{
+											  						console.log("Human Name has been update in this patient contact.");
+											  					}
+											  				})
+															}		
+
+															if(typeof req.body.address !== 'undefined'){
+																ApiFHIR.put('address', {"apikey": apikey, "_id": addressId, "dr": ""}, {body: dataAddress, json: true}, function(error, response, body){
+											  					address = body;
+											  					if(address.err_code > 0){
+											  						res.json(address);	
+											  					}else{
+											  						console.log("Address has been update in this patient contact.");
+											  					}
+											  				})
+															}
+
+															if(typeof req.body.telecom !== 'undefined'){
+																ApiFHIR.put('contactPoint', {"apikey": apikey, "_id": contactPointId, "dr": "PATIENT_CONTACT_ID|"+contactId}, {body: dataContactPoint, json: true}, function(error, response, body){
+											  					contactPoint = body;
+											  					if(contactPoint.err_code > 0){
+											  						res.json(contactPoint);	
+											  					}else{
+											  						console.log("Telecom has been update in this patient contact.");
+											  					}
+											  				})
+															}
+
+															if((typeof dataContact.relationship !== 'undefined') || (typeof dataContact.gender !== 'undefined') || (typeof dataContact.organization !== 'undefined') || (typeof dataContact.period_start !== 'undefined') || (typeof dataContact.period_end !== 'undefined')){
+																ApiFHIR.put('patientContact', {"apikey": apikey, "_id": contactId, "dr": "PATIENT_ID|"+patientId}, {body: dataContact, json: true}, function(error, response, body){
+											  					patientContact = body;
+											  					if(patientContact.err_code > 0){
+											  						res.json(patientContact);	
+											  					}else{
+											  						console.log("Patient contact has been update in this patient.");
+											  					}
+											  				})
+															}
+
+															//get Patient Contact again
+															ApiFHIR.get('PatientContact', {"apikey": apikey}, {}, function(error, response, body){
+																var patientContact2 = JSON.parse(body);
+																res.json({"err_code": 0, "err_msg": "Contact has been update in this patient", "data": patientContact2});
+															})			
+														})													
+												}else{
+													res.json({"err_code": 505, "err_msg": "Contact Id not found"});		
+												}
+											})
+										}else{
+											res.json({"err_code": 504, "err_msg": "Patient Id not found"});		
+										}
+									})
+								})
+
+
+
+								myEmitter.prependListener("checkOrganizationId", function(){
+									if(validator.isEmpty(contactOrganizationId)){
+										myEmitter.emit('checkPatientID');
+									}else{
+										checkUniqeValue(apikey, "ORGANIZATION_ID|" + contactOrganizationId, 'ORGANIZATION', function(resContacOrg){
+											if(resContacOrg.err_code > 0){
+												myEmitter.emit('checkPatientID');
+											}else{
+												res.json({"err_code": 521, "err_msg": "Contact organization id not found"});
+											}
+										})			
+									}
+								})
+
+								myEmitter.prependListener("checkGender", function(){
+									if(validator.isEmpty(contactGender)){
+										myEmitter.emit('checkOrganizationId');
+									}else{
+										checkCode(apikey, contactGender, 'ADMINISTRATIVE_GENDER', function(resContactGender){
+											if(resContactGender.err_code > 0){
+												myEmitter.emit('checkOrganizationId');
+											}else{
+												res.json({"err_code": 515, "err_msg": "Contact gender code not found"});	
+											}
+										})				
+									}
+								})
+
+								myEmitter.prependListener("checkAddressTypeCode", function(){
+									if(validator.isEmpty(contactAddressTypeCode)){
+										myEmitter.emit('checkGender');
+									}else{
+										checkCode(apikey, contactAddressTypeCode, 'ADDRESS_TYPE', function(resContactAddressType){
+											if(resContactAddressType.err_code > 0){
+												myEmitter.emit('checkGender');
+											}else{
+												res.json({"err_code": 514, "err_msg": "Contact address type code not found"});
+											}
+										})			
+									}
+								})
+
+								myEmitter.prependListener("checkAddressUseCode", function(){
+									if(validator.isEmpty(contactAddressUseCode)){
+										myEmitter.emit('checkAddressTypeCode');
+									}else{
+										checkCode(apikey, contactAddressUseCode, 'ADDRESS_USE', function(resContactAddressUse){
+											if(resContactAddressUse.err_code > 0){
+												myEmitter.emit('checkAddressTypeCode');
+											}else{
+												res.json({"err_code": 513, "err_msg": "Contact address use code not found"});	
+											}
+										});		
+									}
+								})
+
+								myEmitter.prependListener("checkNameUseCode", function(){
+									if(validator.isEmpty(contactNameUseCode)){
+										myEmitter.emit('checkAddressUseCode');
+									}else{
+										checkCode(apikey, contactNameUseCode, 'NAME_USE', function(resContactNameUse){
+											if(resContactNameUse.err_code > 0){
+												myEmitter.emit('checkAddressUseCode');
+											}else{
+												res.json({"err_code": 510, "err_msg": "Contact name use code not found"});		
+											}
+										})	
+									}
+								})
+
+								if(validator.isEmpty(contactRelationshipCode)){
+									myEmitter.emit('checkNameUseCode');	
+								}else{
+									checkCode(apikey, contactRelationshipCode, 'CONTACT_ROLE', function(resRelationship){
+										if(resRelationship.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+											myEmitter.emit('checkNameUseCode');
+										}else{
+											res.json({"err_code": 501, "err_msg": "Relationship Code not found"});
 										}
 									})
 								}

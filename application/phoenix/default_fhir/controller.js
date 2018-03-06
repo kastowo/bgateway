@@ -2686,10 +2686,14 @@ var controller = {
         values += "to_date('" + human_name_period_end +"', 'yyyy-MM-dd'),";
       }
 
-      var arrResource = domainResource.split('|');
-      var fieldResource = arrResource[0];
-      var valueResource = arrResource[1];
-      var condition = "human_name_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      if(domainResource !== "" && typeof domainResource !== 'undefined'){
+        var arrResource = domainResource.split('|');
+        var fieldResource = arrResource[0];
+        var valueResource = arrResource[1];
+        var condition = "human_name_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";  
+      }else{
+        var condition = "human_name_id = '" + _id + "'";  
+      }
 
       var query = "UPSERT INTO BACIRO_FHIR.HUMAN_NAME(human_name_id," + column.slice(0, -1) + ") SELECT human_name_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.HUMAN_NAME WHERE " + condition;
       
@@ -2803,10 +2807,14 @@ var controller = {
         values += "'"+ related_person_id + "',";
       }
 
-      var arrResource = domainResource.split('|');
-      var fieldResource = arrResource[0];
-      var valueResource = arrResource[1];
-      var condition = "contact_point_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      if(domainResource !== "" && typeof domainResource !== 'undefined'){
+        var arrResource = domainResource.split('|');
+        var fieldResource = arrResource[0];
+        var valueResource = arrResource[1];
+        var condition = "contact_point_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      }else{
+        var condition = "contact_point_id = '" + _id + "'";
+      }
 
       var query = "UPSERT INTO BACIRO_FHIR.CONTACT_POINT(contact_point_id," + column.slice(0, -1) + ") SELECT contact_point_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.CONTACT_POINT WHERE " + condition;
       
@@ -2942,10 +2950,14 @@ var controller = {
         values += "'"+ related_person_id + "',";
       }
 
-      var arrResource = domainResource.split('|');
-      var fieldResource = arrResource[0];
-      var valueResource = arrResource[1];
-      var condition = "address_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      if(domainResource !== "" && typeof domainResource !== 'undefined'){
+        var arrResource = domainResource.split('|');
+        var fieldResource = arrResource[0];
+        var valueResource = arrResource[1];
+        var condition = "address_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      }else{
+        var condition = "address_id = '" + _id + "'";
+      }
 
       var query = "UPSERT INTO BACIRO_FHIR.ADDRESS(address_id," + column.slice(0, -1) + ") SELECT address_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.ADDRESS WHERE " + condition;
       

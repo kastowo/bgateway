@@ -291,11 +291,16 @@ var controller = {
     },
     patientContact: function getPatientContact(req, res){
       var patientId = req.query.patient_id;
+      var patientContactId = req.query._id;
       //susun query
       var condition = "";
 
       if(typeof patientId !== 'undefined' && patientId !== ""){
-        condition += "pc.patient_id = '" + patientId + "' AND,";  
+        condition += "pc.patient_id = '" + patientId + "' AND ";  
+      }
+
+      if(typeof patientContactId !== 'undefined' && patientContactId !== ""){
+        condition += "pc.patient_contact_id = '" + patientContactId + "' AND ";  
       }
 
       if(condition == ""){
@@ -1015,6 +1020,60 @@ var controller = {
             res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updatePatient"});
         });
       }
+    },
+    patientContact: function updatePatientContact(req, res){
+      var patient_contact_id = req.params.patient_contact_id;
+
+      var patient_contact_gender = req.body.gender;
+      var patient_contact_relationship = req.body.relationship;
+      var patient_contact_period_start = req.body.period_start;
+      var patient_contact_period_end = req.body.period_end;
+      var organization_id = req.body.organization;
+
+      var domainResource = req.params.dr;
+
+      //susun query update
+      var column = "";
+      var values = "";
+      
+      if(typeof patient_contact_gender !== 'undefined' && patient_contact_gender !== ""){
+        column += 'patient_contact_gender,';
+        values += "'" +patient_contact_gender +"',";
+      }
+
+      if(typeof patient_contact_relationship !== 'undefined' && patient_contact_relationship !== ""){
+        column += 'patient_contact_relationship,';
+        values += "'" +patient_contact_relationship +"',";
+      }
+      
+      if(typeof patient_contact_period_start !== 'undefined' && patient_contact_period_start !== ""){
+        column += 'patient_contact_period_start,';
+        values += "to_date('" + patient_contact_period_start +"', 'yyyy-MM-dd'),";
+      }
+
+      if(typeof patient_contact_period_end !== 'undefined' && patient_contact_period_end !== ""){
+        column += 'patient_contact_period_end,';
+        values += "to_date('" + patient_contact_period_end +"', 'yyyy-MM-dd'),";
+      }
+
+      if(typeof organization_id !== 'undefined' && organization_id !== ""){
+        column += 'organization_id,';
+        values += "'" +organization_id +"',";
+      }
+
+      var arrResource = domainResource.split('|');
+      var fieldResource = arrResource[0];
+      var valueResource = arrResource[1];
+      var condition = "patient_contact_id = '" + patient_contact_id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+
+      var query = "UPSERT INTO BACIRO_FHIR.PATIENT_CONTACT(patient_contact_id," + column.slice(0, -1) + ") SELECT patient_contact_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.PATIENT_CONTACT WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        res.json({"err_code":0, "err_msg": "Success updated."});          
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updatePatientContact"});
+      });
+    
     }
   }
 }

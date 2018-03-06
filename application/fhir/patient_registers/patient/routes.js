@@ -12,6 +12,7 @@ var routesPatient = function(app, Patient){
 	app.post('/:apikey/Patient/:patient_id?/Telecom', Patient.post.telecom);
 	app.post('/:apikey/Patient/:patient_id?/Address', Patient.post.address);
 	app.post('/:apikey/Patient/:patient_id?/Photo', Patient.post.attachment);
+	app.post('/:apikey/Patient/:patient_id?/Contact', Patient.post.contact);
 
 	app.put('/:apikey/Patient/:patient_id?', Patient.put.patient);
 	app.put('/:apikey/Patient/:patient_id?/Identifier/:identifier_id?', Patient.put.identifier);
@@ -19,6 +20,7 @@ var routesPatient = function(app, Patient){
 	app.put('/:apikey/Patient/:patient_id?/Telecom/:contact_point_id?', Patient.put.telecom);
 	app.put('/:apikey/Patient/:patient_id?/Address/:address_id?', Patient.put.address);
 	app.put('/:apikey/Patient/:patient_id?/Photo/:attachment_id?', Patient.put.attachment);
+	app.put('/:apikey/Patient/:patient_id?/Contact/:contact_id?', Patient.put.contact);
 
 }
 module.exports = routesPatient

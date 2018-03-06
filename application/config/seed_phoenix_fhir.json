@@ -220,6 +220,9 @@
          "patientContact": {
             "location": "%(apikey)s/patient-contact"
          },
+         "generalPractitioner": {
+            "location": "%(apikey)s/general-practitioner"
+         },
          "relatedPerson": {
             "location": "%(apikey)s/related-person"
          },
@@ -302,6 +305,15 @@
          },
          "address":{
             "location": "%(apikey)s/address/%(_id)s/%(dr)s"
+         },
+         "attachment":{
+            "location": "%(apikey)s/attachment/%(_id)s/%(dr)s"
+         },
+         "patient":{
+            "location": "%(apikey)s/patient/%(_id)s"
+         },
+         "patientContact":{
+            "location": "%(apikey)s/patient-contact/%(_id)s/%(dr)s"
          }
       }
    }

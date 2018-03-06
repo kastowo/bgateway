@@ -14,6 +14,7 @@ var routesPatient = function(app, Patient){
 	app.post('/:apikey/general-practitioner', Patient.post.generalPractitioner);
 
 	app.put('/:apikey/patient/:patient_id?', Patient.put.patient);
+	app.put('/:apikey/patient-contact/:patient_contact_id?/:dr?', Patient.put.patientContact);
 	
 }
 module.exports = routesPatient;
