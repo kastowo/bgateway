@@ -11,6 +11,7 @@ var configYaml = yamlconfig.readConfig(path.resolve('../../application/config/co
 var host = configYaml.phoenix.host;
 var port = configYaml.phoenix.port;
 
+// var phoenix = require("./phoenix.js");
 var phoenix = require(path.resolve("./phoenix.js"));
 var db = new phoenix("jdbc:phoenix:" + host + ":/hbase-unsecure");
 
@@ -274,6 +275,85 @@ var controller = {
         });
       },function(e){
           res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addRelatedPerson"});
+      });
+    }
+  },
+  put: {
+    relatedPerson: function updateRelatedPerson(req, res){
+      var related_person_id = req.params.related_person_id;
+
+      var related_person_active = req.body.active;
+      var related_person_relationship = req.body.relationship;
+      var related_person_gender = req.body.gender;
+      var related_person_birthdate = req.body.birthdate;
+      var related_person_period_start = req.body.period_start;
+      var related_person_period_end = req.body.period_end;
+      var patient_id = req.body.patient_id;
+      //susun query
+      var column = "";
+      var values = "";
+
+      if(typeof related_person_active !== 'undefined' && related_person_active !== ""){
+        column += 'related_person_active,';
+        values += related_person_active +",";
+      }
+
+      if(typeof related_person_relationship !== 'undefined' && related_person_relationship !== ""){
+        column += 'related_person_relationship,';
+        values += "'"+ related_person_relationship +"',";
+      }
+
+      if(typeof related_person_gender !== 'undefined' && related_person_gender !== ""){
+        column += 'related_person_gender,';
+        values += "'"+ related_person_gender +"',";
+      }
+
+      if(typeof req.body.birthdate !== 'undefined' && related_person_birthdate !== ""){
+        column += 'related_person_birthdate,';
+        values += "to_date('"+related_person_birthdate+ "', 'yyyy-MM-dd')" + ",";
+      }
+
+      if(typeof req.body.period_start !== 'undefined'){
+        if(req.body.period_start == ""){
+          related_person_period_start = null;
+        }else{
+          related_person_period_start = "to_date('"+req.body.period_start+ "', 'yyyy-MM-dd')";
+        }
+
+        column += 'related_person_period_start,';
+        values += related_person_period_start + ",";
+      }
+
+      if(typeof req.body.period_end !== 'undefined'){
+        if(req.body.period_end == ""){
+          related_person_period_end = null;
+        }else{
+          related_person_period_end = "to_date('"+req.body.period_end+ "', 'yyyy-MM-dd')";
+        }
+
+        column += 'related_person_period_end,';
+        values += related_person_period_end + ",";
+      }
+
+      if(typeof patient_id !== 'undefined' && patient_id !== ""){
+        column += 'patient_id,';
+        values += "'"+ patient_id +"',";
+      }
+
+      var condition = "related_person_id = '" + related_person_id + "'";
+      
+      var query = "UPSERT INTO BACIRO_FHIR.RELATED_PERSON(related_person_id," + column.slice(0, -1) + ") SELECT related_person_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.RELATED_PERSON WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var query = "SELECT related_person_id, related_person_active, related_person_relationship, related_person_gender, related_person_birthdate, related_person_period_start, related_person_period_end, patient_id FROM BACIRO_FHIR.RELATED_PERSON WHERE " + condition;
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateRelatedPerson"});
+        });
+      },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateRelatedPerson"});
       });
     }
   }

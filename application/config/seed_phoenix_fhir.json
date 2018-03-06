@@ -314,6 +314,9 @@
          },
          "patientContact":{
             "location": "%(apikey)s/patient-contact/%(_id)s/%(dr)s"
+         },
+         "relatedPerson":{
+            "location": "%(apikey)s/related-person/%(_id)s"
          }
       }
    }
