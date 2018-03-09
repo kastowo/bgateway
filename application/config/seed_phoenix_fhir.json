@@ -317,6 +317,12 @@
          },
          "relatedPerson":{
             "location": "%(apikey)s/related-person/%(_id)s"
+         },
+         "person":{
+            "location": "%(apikey)s/person/%(_id)s"
+         },
+         "personLink":{
+            "location": "%(apikey)s/person-link/%(_id)s/%(dr)s"
          }
       }
    }

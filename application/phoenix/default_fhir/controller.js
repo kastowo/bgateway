@@ -3050,11 +3050,14 @@ var controller = {
         column += 'attachment_creation,';
         values += "to_date('" + attachment_creation +"', 'yyyy-MM-dd'),";
       }
-
-      var arrResource = domainResource.split('|');
-      var fieldResource = arrResource[0];
-      var valueResource = arrResource[1];
-      var condition = "attachment_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      if(domainResource !== "" && typeof domainResource !== 'undefined'){
+        var arrResource = domainResource.split('|');
+        var fieldResource = arrResource[0];
+        var valueResource = arrResource[1];
+        var condition = "attachment_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      }else{
+        var condition = "attachment_id = '" + _id + "'";
+      }
 
       var query = "UPSERT INTO BACIRO_FHIR.ATTACHMENT(attachment_id," + column.slice(0, -1) + ") SELECT attachment_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.ATTACHMENT WHERE " + condition;
       

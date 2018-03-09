@@ -13,8 +13,7 @@ var port = configYaml.phoenix.port;
 
 // var phoenix = require("./phoenix.js");
 var phoenix = require(path.resolve("./phoenix.js"));
-// var db = new phoenix("jdbc:phoenix:" + host + ":/hbase-unsecure");
-var db = new phoenix("jdbc:phoenix:" + "192.168.1.231" + ":/hbase-unsecure");
+var db = new phoenix("jdbc:phoenix:" + host + ":/hbase-unsecure");
 
 var controller = {
 	get: {
@@ -210,11 +209,16 @@ var controller = {
       var portFHIR = configYaml.fhir.port;
 
       var personId = req.query.person_id;
+      var personLinkId = req.query._id;
       //susun query
       var condition = "";
 
       if(typeof personId !== 'undefined' && personId !== ""){
-        condition += "person_id = '" + personId + "' AND,";  
+        condition += "person_id = '" + personId + "' AND ";  
+      }
+
+      if(typeof personLinkId !== 'undefined' && personLinkId !== ""){
+        condition += "person_link_id = '" + personLinkId + "' AND ";  
       }
 
       if(condition == ""){
@@ -233,13 +237,13 @@ var controller = {
           PersonLink.id = rez[i].person_link_id;
 
           if(rez[i].person_link_target_patient != null){
-            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient/' +  rez[i].person_link_target_patient;
+            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient?_id=' +  rez[i].person_link_target_patient;
           }else if(rez[i].person_link_target_practitioner != null){
-            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner/' +  rez[i].person_link_target_practitioner;
+            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner?_id=' +  rez[i].person_link_target_practitioner;
           }else if(rez[i].person_link_target_related_person != null){
-            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/person/' +  rez[i].person_link_target_related_person;
+            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson?_id=' +  rez[i].person_link_target_related_person;
           }else{
-            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person/' +  rez[i].person_link_target_person;
+            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person?_id=' +  rez[i].person_link_target_person;
           }
            
            PersonLink.assurance = rez[i].person_link_assurance;
@@ -281,11 +285,15 @@ var controller = {
       });
     },
     personLink: function addPersonLink(req, res){
+      var apikey = req.params.apikey;
+      var hostFHIR = configYaml.fhir.host;
+      var portFHIR = configYaml.fhir.port;
+
       var person_link_id = req.body.id;
       var patientId = req.body.patient_id;
       var practitionerId = req.body.practitioner_id;
-      var personId = req.body.person_id;
-      var personId = req.body.person_id;
+      var personId = req.body.related_person_id;
+      var relatedPersonId = req.body.person_id;
       var personId2 = req.body.person_id2;
       var assurance= req.body.assurance;
 
@@ -303,9 +311,9 @@ var controller = {
         values += "'"+ practitionerId +"',";
       }
 
-      if(typeof personId !== 'undefined' && personId !== ""){
+      if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
         column += 'person_link_target_related_person,';
-        values += "'"+ personId +"',";
+        values += "'"+ relatedPersonId +"',";
       }
 
       if(typeof personId2 !== 'undefined' && personId2 !== "" ){
@@ -328,15 +336,166 @@ var controller = {
         " VALUES ('"+ person_link_id +"', " + values.slice(0, -1) + ")";
       
       db.upsert(query,function(succes){
+        var arrPersonLink = [];
         var query = "SELECT person_link_id, person_link_target_patient, person_link_target_practitioner, person_link_target_related_person, person_link_target_person, person_link_assurance FROM BACIRO_FHIR.PERSON_LINK WHERE person_link_id = '" + person_link_id + "' ";
         db.query(query,function(dataJson){
           rez = lowercaseObject(dataJson);
-          res.json({"err_code":0,"data":rez});
+          for(i = 0; i < rez.length; i++){
+            var PersonLink = {};
+            PersonLink.id = rez[i].person_link_id;
+
+            if(rez[i].person_link_target_patient != null){
+              PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient?_id=' +  rez[i].person_link_target_patient;
+            }else if(rez[i].person_link_target_practitioner != null){
+              PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner?_id=' +  rez[i].person_link_target_practitioner;
+            }else if(rez[i].person_link_target_related_person != null){
+              PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson?_id=' +  rez[i].person_link_target_related_person;
+            }else{
+              PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person?_id=' +  rez[i].person_link_target_person;
+            }
+             
+             PersonLink.assurance = rez[i].person_link_assurance;
+
+            arrPersonLink[i] = PersonLink;
+          }
+          res.json({"err_code":0,"data": arrPersonLink});
         },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addPersonLink"});
         });
       },function(e){
           res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addPersonLink"});
+      });
+    }
+  },
+  put: {
+    person: function updatePerson(req, res){
+      var person_id = req.params.person_id;
+
+      var person_gender = req.body.gender;
+      var person_birthdate = req.body.birthdate;
+      var person_active = req.body.active;
+      var organization_id = req.body.organization;
+
+
+      //susun query update
+      var column = "";
+      var values = "";
+      
+      if(typeof person_gender !== 'undefined' && person_gender !== ""){
+        column += 'person_gender,';
+        values += "'" +person_gender +"',";
+      }
+
+      if(typeof person_active !== 'undefined' && person_active !== ""){
+        column += 'person_active,';
+        values += person_active +",";
+      }
+      
+      if(typeof person_birthdate !== 'undefined' && person_birthdate !== ""){
+        column += 'person_birthdate,';
+        values += "to_date('" + person_birthdate +"', 'yyyy-MM-dd'),";
+      }
+
+      if(typeof organization_id !== 'undefined' && organization_id !== ""){
+        column += 'organization_id,';
+        values += "'" +organization_id +"',";
+      }
+
+      var condition = "person_id = '" + person_id + "'";
+
+      var query = "UPSERT INTO BACIRO_FHIR.PERSON(person_id," + column.slice(0, -1) + ") SELECT person_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.PERSON WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        res.json({"err_code":0, "err_msg": "Success updated."});          
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updatePerson"});
+      });
+    },
+    personLink: function updatePersonLink(req, res){
+      var apikey = req.params.apikey;
+      var hostFHIR = configYaml.fhir.host;
+      var portFHIR = configYaml.fhir.port;
+
+      var _id = req.params.person_link_id;
+      var domainResource = req.params.dr;
+
+      var person_link_target_patient = req.body.link_target_patient_id;
+      var person_link_target_practitioner = req.body.link_target_practitioner_id;
+      var person_link_target_related_person = req.body.link_target_related_person_id;
+      var person_link_target_person = req.body.link_target_person_id;
+      var person_link_assurance = req.body.assurance;
+      
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof person_link_target_patient !== 'undefined' && person_link_target_patient !== "" ){
+        column += 'person_link_target_patient,';
+        values += "'" +person_link_target_patient +"',";
+      }
+
+      if(typeof person_link_target_practitioner !== 'undefined' && person_link_target_practitioner !== ""){
+        column += 'person_link_target_practitioner,';
+        values += "'" +person_link_target_practitioner +"',";
+      }
+
+      if(typeof person_link_target_related_person !== 'undefined' && person_link_target_related_person !== ""){
+        column += 'person_link_target_related_person,';
+        values += "'" +person_link_target_related_person +"',";
+      }
+
+      if(typeof person_link_target_person !== 'undefined' && person_link_target_person !== ""){
+        column += 'person_link_target_person,';
+        values += "" +person_link_target_person +",";
+      }
+
+      if(typeof person_link_assurance !== 'undefined' && person_link_assurance !== ""){
+        column += 'person_link_assurance,';
+        values += "'" +person_link_assurance +"',";
+      }
+
+      
+      if(domainResource !== "" && typeof domainResource !== 'undefined'){
+        var arrResource = domainResource.split('|');
+        var fieldResource = arrResource[0];
+        var valueResource = arrResource[1];
+        var condition = "person_link_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      }else{
+        var condition = "person_link_id = '" + _id + "'";
+      }
+
+      var query = "UPSERT INTO BACIRO_FHIR.PERSON_LINK(person_link_id," + column.slice(0, -1) + ") SELECT person_link_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.PERSON_LINK WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var arrPersonLink = [];
+        var query = "SELECT person_link_id, person_link_target_patient, person_link_target_practitioner, person_link_target_related_person, person_link_target_person, person_link_assurance FROM BACIRO_FHIR.PERSON_LINK WHERE " + condition;
+        db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        for(i = 0; i < rez.length; i++){
+          var PersonLink = {};
+          PersonLink.id = rez[i].person_link_id;
+
+          if(rez[i].person_link_target_patient != null){
+            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient?_id=' +  rez[i].person_link_target_patient;
+          }else if(rez[i].person_link_target_practitioner != null){
+            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner?_id=' +  rez[i].person_link_target_practitioner;
+          }else if(rez[i].person_link_target_related_person != null){
+            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson?_id=' +  rez[i].person_link_target_related_person;
+          }else{
+            PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person?_id=' +  rez[i].person_link_target_person;
+          }
+           
+           PersonLink.assurance = rez[i].person_link_assurance;
+
+          arrPersonLink[i] = PersonLink;
+        }
+        res.json({"err_code":0,"data": arrPersonLink});
+      },function(e){
+        res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updatePersonLink"});
+      });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updatePersonLink"});
       });
     }
   }
