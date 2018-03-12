@@ -227,7 +227,7 @@
             "location": "%(apikey)s/related-person"
          },
          "group": {
-            "location": "%(apikey)s/group"
+            "location": "%(apikey)s/group_"
          },
          "groupCharacteristic": {
             "location": "%(apikey)s/group-characteristic"
@@ -323,6 +323,15 @@
          },
          "personLink":{
             "location": "%(apikey)s/person-link/%(_id)s/%(dr)s"
+         },
+         "group": {
+            "location": "%(apikey)s/group-update/%(_id)s"
+         },
+         "groupMember": {
+            "location": "%(apikey)s/group-member/%(_id)s/%(dr)s"
+         },
+         "groupCharacteristic": {
+            "location": "%(apikey)s/group-characteristic/%(_id)s/%(dr)s"
          }
       }
    }

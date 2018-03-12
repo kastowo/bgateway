@@ -98,7 +98,7 @@ var controller = {
       
       var arrGroup = [];
       var query = "SELECT g.group_id as group_id, group_active, group_type, group_actual, group_code, group_name, group_quantity FROM BACIRO_FHIR.GROUP_ g" + fixCondition;
-      console.log(query)
+      
       db.query(query,function(dataJson){
         rez = lowercaseObject(dataJson);
         for(i = 0; i < rez.length; i++){
@@ -121,11 +121,16 @@ var controller = {
     },
     groupCharacteristic: function getGroupCharacteristic(req, res){
       var groupId = req.query.group_id;
+      var groupCharacteristicId = req.query._id;
       //susun query
       var condition = "";
 
       if(typeof groupId !== 'undefined' && groupId !== ""){
-        condition += "group_id = '" + groupId + "' AND,";  
+        condition += "group_id = '" + groupId + "' AND ";  
+      }
+
+      if(typeof groupCharacteristicId !== 'undefined' && groupCharacteristicId !== ""){
+        condition += "group_characteristic_id = '" + groupCharacteristicId + "' AND ";  
       }
 
       if(condition == ""){
@@ -173,11 +178,16 @@ var controller = {
       var portFHIR = configYaml.fhir.port;
 
       var groupId = req.query.group_id;
+      var groupMemberId = req.query._id;
       //susun query
       var condition = "";
 
       if(typeof groupId !== 'undefined' && groupId !== ""){
-        condition += "group_id = '" + groupId + "' AND,";  
+        condition += "group_id = '" + groupId + "' AND ";  
+      }
+
+      if(typeof groupMemberId !== 'undefined' && groupMemberId !== ""){
+        condition += "group_member_id = '" + groupMemberId + "' AND ";  
       }
 
       if(condition == ""){
@@ -350,10 +360,34 @@ var controller = {
         " VALUES ('"+group_characteristic_id+"', " + values.slice(0, -1) + ")";
       
       db.upsert(query,function(succes){
+        var arrGroupCharacteristic = [];
         var query = "SELECT group_characteristic_id, group_characteristic_code, group_characteristic_value, group_characteristic_exclude, group_characteristic_period_start, group_characteristic_period_end FROM BACIRO_FHIR.GROUP_CHARACTERISTIC WHERE group_characteristic_id = '" + group_characteristic_id + "'";
         db.query(query,function(dataJson){
           rez = lowercaseObject(dataJson);
-          res.json({"err_code":0,"data":rez});
+          for(i = 0; i < rez.length; i++){
+            var GroupCharacteristic = {};
+            
+            GroupCharacteristic.id = rez[i].group_characteristic_id;
+            GroupCharacteristic.code = rez[i].group_characteristic_code;
+            GroupCharacteristic.value = rez[i].group_characteristic_value;
+            GroupCharacteristic.exclude = rez[i].group_characteristic_exclude;
+            
+            if(rez[i].group_characteristic_period_start == "" || rez[i].group_characteristic_period_start == "null"){
+              GroupCharacteristic.period_start = "";
+            }else{
+              GroupCharacteristic.period_start = formatDate(rez[i].group_characteristic_period_start);
+              
+            }
+
+            if(rez[i].group_characteristic_period_end == "" || rez[i].group_characteristic_period_end == "null"){
+              GroupCharacteristic.period_end = "";
+            }else{
+              GroupCharacteristic.period_end = formatDate(rez[i].group_characteristic_period_end);
+            }
+            
+            arrGroupCharacteristic[i] = GroupCharacteristic;
+          }
+          res.json({"err_code":0,"data": arrGroupCharacteristic});
         },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addGroupCharacteristic"});
         });
@@ -448,7 +482,264 @@ var controller = {
           res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addGroupMember"});
       });
     }
+  },
+  put: {
+    group: function updateGroup(req, res){
+      var apikey = req.params.apikey;
+      var hostFHIR = configYaml.fhir.host;
+      var portFHIR = configYaml.fhir.port;
+
+      var group_id = req.params.group_id;
+      var group_active = req.body.active;
+      var group_type = req.body.type;
+      var group_actual = req.body.actual;
+      var group_code = req.body.code;
+      var group_name = req.body.name;
+      var group_quantity = req.body.quantity;
+      
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof group_active !== 'undefined' && group_active !== "" ){
+        column += 'group_active,';
+        values += group_active +",";
+      }
+
+      if(typeof group_type !== 'undefined' && group_type !== ""){
+        column += 'group_type,';
+        values += "'" +group_type +"',";
+      }
+
+      if(typeof group_actual !== 'undefined' && group_actual !== ""){
+        column += 'group_actual,';
+        values += group_actual +",";
+      }
+
+      if(typeof group_code !== 'undefined' && group_code !== ""){
+        column += 'group_code,';
+        values += "'" +group_code +"',";
+      }
+
+      if(typeof group_name !== 'undefined' && group_name !== ""){
+        column += 'group_name,';
+        values += "'" +group_name +"',";
+      }
+
+      if(typeof group_quantity !== 'undefined' && group_quantity !== ""){
+        column += 'group_quantity,';
+        values +=  group_quantity +",";
+      }
+  
+      var condition = "group_id = '" + group_id + "'";
+     
+      var query = "UPSERT INTO BACIRO_FHIR.GROUP_ (group_id," + column.slice(0, -1) + ") SELECT group_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.GROUP_ WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var query = "SELECT group_id, group_active, group_type, group_actual, group_code, group_name, group_quantity FROM BACIRO_FHIR.GROUP_ WHERE group_id = '" + group_id + "'";
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateGroupMember"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateGroupMember"});
+      });
+    },
+    groupMember: function updateGroupMember(req, res){
+      var apikey = req.params.apikey;
+      var hostFHIR = configYaml.fhir.host;
+      var portFHIR = configYaml.fhir.port;
+
+      var _id = req.params.group_member_id;
+      var domainResource = req.params.dr;
+
+      var group_member_entity_patient_id = req.body.patient_id;
+      var group_member_entity_practitioner_id = req.body.practitioner_id;
+      var group_member_entity_device_id = req.body.device_id;
+      var group_member_entity_medication_id = req.body.medication_id;
+      var group_member_entity_substance_id = req.body.substance_id;
+      var group_member_inactive = req.body.inactive;
+      
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof group_member_entity_patient_id !== 'undefined' && group_member_entity_patient_id !== "" ){
+        column += 'group_member_entity_patient_id,';
+        values += "'" +group_member_entity_patient_id +"',";
+      }
+
+      if(typeof group_member_entity_practitioner_id !== 'undefined' && group_member_entity_practitioner_id !== ""){
+        column += 'group_member_entity_practitioner_id,';
+        values += "'" +group_member_entity_practitioner_id +"',";
+      }
+
+      if(typeof group_member_entity_device_id !== 'undefined' && group_member_entity_device_id !== ""){
+        column += 'group_member_entity_device_id,';
+        values += "'" +group_member_entity_device_id +"',";
+      }
+
+      if(typeof group_member_entity_medication_id !== 'undefined' && group_member_entity_medication_id !== ""){
+        column += 'group_member_entity_medication_id,';
+        values += "" +group_member_entity_medication_id +",";
+      }
+
+      if(typeof group_member_entity_substance_id !== 'undefined' && group_member_entity_substance_id !== ""){
+        column += 'group_member_entity_substance_id,';
+        values += "" +group_member_entity_substance_id +",";
+      }
+
+      if(typeof group_member_inactive !== 'undefined' && group_member_inactive !== ""){
+        column += 'group_member_inactive,';
+        values +=  group_member_inactive +",";
+      }
+
+      
+      if(domainResource !== "" && typeof domainResource !== 'undefined'){
+        var arrResource = domainResource.split('|');
+        var fieldResource = arrResource[0];
+        var valueResource = arrResource[1];
+        var condition = "group_member_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      }else{
+        var condition = "group_member_id = '" + _id + "'";
+      }
+
+      var query = "UPSERT INTO BACIRO_FHIR.GROUP_MEMBER(group_member_id," + column.slice(0, -1) + ") SELECT group_member_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.GROUP_MEMBER WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var arrGroupMember = [];
+        var query = "SELECT group_member_id, group_member_entity_patient_id, group_member_entity_practitioner_id, group_member_entity_device_id, group_member_entity_medication_id, group_member_entity_substance_id, group_member_inactive FROM BACIRO_FHIR.GROUP_MEMBER WHERE " + condition;
+
+        db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        for(i = 0; i < rez.length; i++){
+          var GroupMember = {};
+          GroupMember.id = rez[i].group_member_id;
+
+          if(rez[i].group_member_entity_patient_id != null){
+            GroupMember.entity = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient?_id=' +  rez[i].group_member_entity_patient_id;
+          }else if(rez[i].group_member_entity_practitioner_id != null){
+            GroupMember.entity = hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner?_id=' +  rez[i].group_member_entity_practitioner_id;
+          }else if(rez[i].group_member_entity_device_id != null){
+            GroupMember.entity = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson?_id=' +  rez[i].group_member_entity_device_id;
+          }else if(rez[i].group_member_entity_medication_id != null){
+            GroupMember.entity = hostFHIR + ':' + portFHIR + '/' + apikey + '/Medication?_id=' +  rez[i].group_member_entity_medication_id;
+          }else if(rez[i].group_member_entity_substance_id != null){
+            GroupMember.entity = hostFHIR + ':' + portFHIR + '/' + apikey + '/Substance?_id=' +  rez[i].group_member_entity_substance_id;
+          }else{
+            GroupMember.entity = "";
+          }
+           
+           GroupMember.inactive = rez[i].group_member_inactive;
+
+          arrGroupMember[i] = GroupMember;
+        }
+        res.json({"err_code":0,"data": arrGroupMember});
+      },function(e){
+        res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateGroupMember"});
+      });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateGroupMember"});
+      });
+    },
+    groupCharacteristic: function updateGroupCharacteristic(req, res){
+      var apikey = req.params.apikey;
+      var hostFHIR = configYaml.fhir.host;
+      var portFHIR = configYaml.fhir.port;
+
+      var _id = req.params.group_characteristic_id;
+      var domainResource = req.params.dr;
+
+      var group_characteristic_code = req.body.code;
+      var group_characteristic_value = req.body.value;
+      var group_characteristic_exclude = req.body.exclude;
+      var group_characteristic_period_start = req.body.period_start;
+      var group_characteristic_period_end = req.body.period_end;
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof group_characteristic_code !== 'undefined' && group_characteristic_code !== "" ){
+        column += 'group_characteristic_code,';
+        values += "'" +group_characteristic_code +"',";
+      }
+
+      if(typeof group_characteristic_value !== 'undefined' && group_characteristic_value !== ""){
+        column += 'group_characteristic_value,';
+        values += "'" +group_characteristic_value +"',";
+      }
+
+      if(typeof group_characteristic_exclude !== 'undefined' && group_characteristic_exclude !== ""){
+        column += 'group_characteristic_exclude,';
+        values += group_characteristic_exclude +",";
+      }
+
+      if(typeof group_characteristic_period_start !== 'undefined' && group_characteristic_period_start !== ""){
+        column += 'group_characteristic_period_start,';
+        values += "to_date('" + group_characteristic_period_start +"', 'yyyy-MM-dd'),";
+      }
+
+      if(typeof group_characteristic_period_end !== 'undefined' && group_characteristic_period_end !== ""){
+        column += 'group_characteristic_period_end,';
+        values += "to_date('" + group_characteristic_period_end +"', 'yyyy-MM-dd'),";
+      }
+
+      
+      if(domainResource !== "" && typeof domainResource !== 'undefined'){
+        var arrResource = domainResource.split('|');
+        var fieldResource = arrResource[0];
+        var valueResource = arrResource[1];
+        var condition = "group_characteristic_id = '" + _id + "' AND " + fieldResource +" = '"+ valueResource +"'";
+      }else{
+        var condition = "group_characteristic_id = '" + _id + "'";
+      }
+
+      var query = "UPSERT INTO BACIRO_FHIR.GROUP_CHARACTERISTIC(group_characteristic_id," + column.slice(0, -1) + ") SELECT group_characteristic_id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.GROUP_CHARACTERISTIC WHERE " + condition;
+      
+      db.upsert(query,function(succes){
+        var arrGroupCharacteristic = [];
+        var query = "SELECT group_characteristic_id, group_characteristic_code, group_characteristic_value, group_characteristic_exclude, group_characteristic_period_start, group_characteristic_period_end FROM BACIRO_FHIR.GROUP_CHARACTERISTIC WHERE " + condition;
+      
+        db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+         for(i = 0; i < rez.length; i++){
+          var GroupCharacteristic = {};
+          
+          GroupCharacteristic.id = rez[i].group_characteristic_id;
+          GroupCharacteristic.code = rez[i].group_characteristic_code;
+          GroupCharacteristic.value = rez[i].group_characteristic_value;
+          GroupCharacteristic.exclude = rez[i].group_characteristic_exclude;
+          
+          if(rez[i].group_characteristic_period_start == "" || rez[i].group_characteristic_period_start == "null"){
+            GroupCharacteristic.period_start = "";
+          }else{
+            GroupCharacteristic.period_start = formatDate(rez[i].group_characteristic_period_start);
+            
+          }
+
+          if(rez[i].group_characteristic_period_end == "" || rez[i].group_characteristic_period_end == "null"){
+            GroupCharacteristic.period_end = "";
+          }else{
+            GroupCharacteristic.period_end = formatDate(rez[i].group_characteristic_period_end);
+          }
+          
+          arrGroupCharacteristic[i] = GroupCharacteristic;
+        }
+        res.json({"err_code":0,"data": arrGroupCharacteristic});
+      },function(e){
+        res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateGroupCharacteristic"});
+      });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateGroupCharacteristic"});
+      });
+    }
   }
+
 }
 
 function lowercaseObject(jsonData){
