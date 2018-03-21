@@ -11,6 +11,9 @@ var configYaml = yamlconfig.readConfig(path.resolve('../../application/config/co
 var host = configYaml.phoenix.host;
 var port = configYaml.phoenix.port;
 
+var hostFHIR = configYaml.fhir.host;
+var portFHIR = configYaml.fhir.port;
+
 // var phoenix = require("./phoenix.js");
 var phoenix = require(path.resolve("./phoenix.js"));
 var db = new phoenix("jdbc:phoenix:" + host + ":/hbase-unsecure");
@@ -94,6 +97,8 @@ var controller = {
       });
     },
     Identifier: function getIdentifier(req, res){
+      var apikey = req.params.apikey;
+
       var identifierId = req.query._id;
       var personId = req.query.person_id;
       var patientId = req.query.patient_id;
@@ -108,14 +113,17 @@ var controller = {
 
       if(typeof personId !== 'undefined' && personId !== ""){
         condition += "person_id = '" + personId + "' AND ";  
+        systemURI = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person/' + personId + '/Identifier/';
       }
 
       if(typeof patientId !== 'undefined' && patientId !== ""){
         condition += "i.patient_id = '" + patientId + "' AND ";  
+        systemURI = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient/' + patientId + '/Identifier/';
       }
 
       if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
         condition += "i.related_person_id = '" + relatedPersonId + "' AND ";  
+        systemURI = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson/' + relatedPersonId + '/Identifier/';
       }
 
       if(condition == ""){
@@ -134,7 +142,7 @@ var controller = {
           Identifier.id = rez[i].identifier_id;
           Identifier.use = rez[i].identifier_use;
           Identifier.type = rez[i].identifier_type;
-          Identifier.system = rez[i].identifier_system;
+          Identifier.system = systemURI + rez[i].identifier_system;
           Identifier.value = rez[i].identifier_value;
           Identifier.period = formatDate(rez[i].identifier_period_start)+' to '+ formatDate(rez[i].identifier_period_end);
           Identifier.assigner = rez[i].organization_id;
@@ -348,6 +356,7 @@ var controller = {
       });
     },
     Attachment: function getAttachment(req, res){
+      var apikey = req.params.apikey;
       var attachmentId = req.query._id;
       var patientId = req.query.patient_id;
       var relatedPersonId = req.query.related_person_id;
@@ -357,6 +366,7 @@ var controller = {
 
       if(typeof patientId !== 'undefined' && patientId !== ""){
         condition += "patient_id = '" + patientId + "' AND ";  
+        systemURI = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient/'+patientId+'/Photo/';
       }
 
       if(typeof attachmentId !== 'undefined' && attachmentId !== ""){
@@ -365,6 +375,7 @@ var controller = {
 
       if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
         condition += "related_person_id = '" + relatedPersonId + "' AND ";  
+        systemURI = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson/'+relatedPersonId+'/Photo/';
       }
 
       if(condition == ""){
@@ -383,7 +394,7 @@ var controller = {
           Attachment.id = rez[i].attachment_id;
           Attachment.type = rez[i].attachment_content_type;
           Attachment.language = rez[i].attachment_language;
-          Attachment.url = rez[i].attachment_url;
+          Attachment.url = systemURI + rez[i].attachment_url;
           Attachment.size = rez[i].attachment_size; //attachmentSize = bytes(attachmentSize);
           Attachment.hash = rez[i].attachment_hash;
           Attachment.title = rez[i].attachment_title;
@@ -937,6 +948,156 @@ var controller = {
         res.json({"err_code":0,"data":rez});
       },function(e){
         res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getAddressTypeCode"});
+      });
+    },
+    appointmentReasonCode: function getAppointmentReasonCode(req, res){
+      _id = req.params._id;
+
+      if(_id == 0){
+        condition = "";
+      }else{
+        condition = "WHERE id = "+ _id;
+      }
+
+      var query = "SELECT id, code, description FROM BACIRO_FHIR.APPOINTMENT_REASON_CODE " + condition;
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getAppointmentReasonCode"});
+      });
+    },
+    appointmentReasonCodeCode: function getAppointmentReasonCodeCode(req, res){
+      code = req.params.code;
+
+      var query = "SELECT id, code, description FROM BACIRO_FHIR.APPOINTMENT_REASON_CODE WHERE code = '" + code + "' ";
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getAppointmentReasonCodeCode"});
+      });
+    },
+    slotStatus: function getSlotStatus(req, res){
+      _id = req.params._id;
+
+      if(_id == 0){
+        condition = "";
+      }else{
+        condition = "WHERE id = "+ _id;
+      }
+
+      var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.SLOT_STATUS " + condition;
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getSlotStatus"});
+      });
+    },
+    slotStatusCode: function getSlotStatusCode(req, res){
+      code = req.params.code;
+
+      var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.SLOT_STATUS WHERE code = '" + code + "' ";
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getSlotStatusCode"});
+      });
+    },
+    appointmentStatus: function getAppointmentStatus(req, res){
+      _id = req.params._id;
+
+      if(_id == 0){
+        condition = "";
+      }else{
+        condition = "WHERE id = "+ _id;
+      }
+
+      var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.APPOINTMENT_STATUS " + condition;
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getAppointmentStatus"});
+      });
+    },
+    appointmentStatusCode: function getAppointmentStatusCode(req, res){
+      code = req.params.code;
+
+      var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.APPOINTMENT_STATUS WHERE code = '" + code + "' ";
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getAppointmentStatusCode"});
+      });
+    },
+    participantRequired: function getParticipantRequired(req, res){
+      _id = req.params._id;
+
+      if(_id == 0){
+        condition = "";
+      }else{
+        condition = "WHERE id = "+ _id;
+      }
+
+      var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.PARTICIPANT_REQUIRED " + condition;
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getParticipantRequired"});
+      });
+    },
+    participantRequiredCode: function getParticipantRequiredCode(req, res){
+      code = req.params.code;
+
+      var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.PARTICIPANT_REQUIRED WHERE code = '" + code + "' ";
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getParticipantRequiredCode"});
+      });
+    },
+    participationStatus: function getparticipationStatus(req, res){
+      _id = req.params._id;
+
+      if(_id == 0){
+        condition = "";
+      }else{
+        condition = "WHERE id = "+ _id;
+      }
+
+      var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.PARTICIPATION_STATUS " + condition;
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getparticipationStatus"});
+      });
+    },
+    participationStatusCode: function getparticipationStatusCode(req, res){
+      code = req.params.code;
+
+      var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.PARTICIPATION_STATUS WHERE code = '" + code + "' ";
+      
+      db.query(query,function(dataJson){
+        rez = lowercaseObject(dataJson);
+        res.json({"err_code":0,"data":rez});
+      },function(e){
+        res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "getparticipationStatusCode"});
       });
     }
   },
@@ -1846,6 +2007,105 @@ var controller = {
       },function(e){
           res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addAddress"});
       });
+    },
+    appointmentReasonCode: function addAppointmentReasonCode(req, res){
+      var code = req.body.code;
+      var description = req.body.description;
+     
+      var query = "UPSERT INTO BACIRO_FHIR.APPOINTMENT_REASON_CODE(id, code, description)"+
+        " VALUES (NEXT VALUE FOR BACIRO_FHIR.APPOINTMENT_REASON_CODE_AUTO_ID,'"+code+"','"+description+"')";
+        
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, description FROM BACIRO_FHIR.APPOINTMENT_REASON_CODE WHERE code = '" + code + "' ";
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addAppointmentReasonCode"});
+        });
+      },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addAppointmentReasonCode"});
+      });
+    },
+    slotStatus: function addSlotStatus(req, res){
+      var code = req.body.code;
+      var display = req.body.display;
+      var definition = req.body.definition;
+     
+      var query = "UPSERT INTO BACIRO_FHIR.SLOT_STATUS(id, code, display, definition)"+
+        " VALUES (NEXT VALUE FOR BACIRO_FHIR.SLOT_STATUS_AUTO_ID,'"+code+"','"+display+"','"+definition+"')";
+        
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.SLOT_STATUS WHERE code = '" + code + "' ";
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addSlotStatus"});
+        });
+      },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addSlotStatus"});
+      });
+    },
+    appointmentStatus: function addAppointmentStatus(req, res){
+      var code = req.body.code;
+      var display = req.body.display;
+      var definition = req.body.definition;
+     
+      var query = "UPSERT INTO BACIRO_FHIR.APPOINTMENT_STATUS(id, code, display, definition)"+
+        " VALUES (NEXT VALUE FOR BACIRO_FHIR.APPOINTMENT_STATUS_AUTO_ID,'"+code+"','"+display+"','"+definition+"')";
+        
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.APPOINTMENT_STATUS WHERE code = '" + code + "' ";
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addAppointmentStatus"});
+        });
+      },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addAppointmentStatus"});
+      });
+    },
+    participantRequired: function addParticipantRequired(req, res){
+      var code = req.body.code;
+      var display = req.body.display;
+      var definition = req.body.definition;
+     
+      var query = "UPSERT INTO BACIRO_FHIR.PARTICIPANT_REQUIRED(id, code, display, definition)"+
+        " VALUES (NEXT VALUE FOR BACIRO_FHIR.PARTICIPANT_REQUIRED_AUTO_ID,'"+code+"','"+display+"','"+definition+"')";
+        
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.PARTICIPANT_REQUIRED WHERE code = '" + code + "' ";
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addParticipantRequired"});
+        });
+      },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addParticipantRequired"});
+      });
+    },
+    participationStatus: function addparticipationStatus(req, res){
+      var code = req.body.code;
+      var display = req.body.display;
+      var definition = req.body.definition;
+     
+      var query = "UPSERT INTO BACIRO_FHIR.PARTICIPATION_STATUS(id, code, display, definition)"+
+        " VALUES (NEXT VALUE FOR BACIRO_FHIR.PARTICIPATION_STATUS_AUTO_ID,'"+code+"','"+display+"','"+definition+"')";
+        
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.PARTICIPATION_STATUS WHERE code = '" + code + "' ";
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "addparticipationStatus"});
+        });
+      },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "addparticipationStatus"});
+      });
     }
   },
   put: {
@@ -1936,6 +2196,7 @@ var controller = {
       var code = req.body.code;
       var display = req.body.display;
       var definition = req.body.definition;
+      var system = req.body.system;
       
       //susun query update
       var column = "";
@@ -1951,6 +2212,11 @@ var controller = {
         values += "'" +display +"',";
       }
 
+      if(typeof system !== 'undefined'){
+        column += 'system,';
+        values += "'" +system +"',";
+      }
+
       if(typeof definition !== 'undefined'){
         column += 'definition,';
         values += "'" +definition +"',";
@@ -1960,7 +2226,7 @@ var controller = {
       var query = "UPSERT INTO BACIRO_FHIR.MARITAL_STATUS(id," + column.slice(0, -1) + ") SELECT id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.MARITAL_STATUS WHERE id = " + _id;
       
       db.upsert(query,function(succes){
-        var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.MARITAL_STATUS WHERE id = "+ _id;
+        var query = "SELECT id, code, display, definition, system FROM BACIRO_FHIR.MARITAL_STATUS WHERE id = "+ _id;
 
         db.query(query,function(dataJson){
           rez = lowercaseObject(dataJson);
@@ -3086,6 +3352,200 @@ var controller = {
         });
       },function(e){
           res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAddress"});
+      });
+    },
+    appointmentReasonCode: function updateAppointmentReasonCode(req, res){
+      var _id = req.params._id;
+      var code = req.body.code;
+      var description = req.body.description;
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof code !== 'undefined'){
+        column += 'code,';
+        values += "'" +code +"',";
+      }
+
+      if(typeof description !== 'undefined'){
+        column += 'description,';
+        values += "'" +description +"',";
+      }
+
+      var query = "UPSERT INTO BACIRO_FHIR.APPOINTMENT_REASON_CODE(id," + column.slice(0, -1) + ") SELECT id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.APPOINTMENT_REASON_CODE WHERE id = " + _id;
+      
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, description FROM BACIRO_FHIR.APPOINTMENT_REASON_CODE WHERE id = "+ _id;
+
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateAppointmentReasonCode"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAppointmentReasonCode"});
+      });
+    },
+    slotStatus: function updateSlotStatus(req, res){
+      var _id = req.params._id;
+      var code = req.body.code;
+      var display = req.body.display;
+      var definition = req.body.definition;
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof code !== 'undefined'){
+        column += 'code,';
+        values += "'" +code +"',";
+      }
+
+      if(typeof display !== 'undefined'){
+        column += 'display,';
+        values += "'" +display +"',";
+      }
+
+      if(typeof definition !== 'undefined'){
+        column += 'definition,';
+        values += "'" +definition +"',";
+      }
+
+      var query = "UPSERT INTO BACIRO_FHIR.SLOT_STATUS(id," + column.slice(0, -1) + ") SELECT id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.SLOT_STATUS WHERE id = " + _id;
+      
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.SLOT_STATUS WHERE id = "+ _id;
+
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateSlotStatus"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateSlotStatus"});
+      });
+    },
+    appointmentStatus: function updateAppointmentStatus(req, res){
+      var _id = req.params._id;
+      var code = req.body.code;
+      var display = req.body.display;
+      var definition = req.body.definition;
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof code !== 'undefined'){
+        column += 'code,';
+        values += "'" +code +"',";
+      }
+
+      if(typeof display !== 'undefined'){
+        column += 'display,';
+        values += "'" +display +"',";
+      }
+
+      if(typeof definition !== 'undefined'){
+        column += 'definition,';
+        values += "'" +definition +"',";
+      }
+
+      var query = "UPSERT INTO BACIRO_FHIR.APPOINTMENT_STATUS(id," + column.slice(0, -1) + ") SELECT id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.APPOINTMENT_STATUS WHERE id = " + _id;
+      
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.APPOINTMENT_STATUS WHERE id = "+ _id;
+
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateAppointmentStatus"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateAppointmentStatus"});
+      });
+    },
+    participantRequired: function updateParticipantRequired(req, res){
+      var _id = req.params._id;
+      var code = req.body.code;
+      var display = req.body.display;
+      var definition = req.body.definition;
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof code !== 'undefined'){
+        column += 'code,';
+        values += "'" +code +"',";
+      }
+
+      if(typeof display !== 'undefined'){
+        column += 'display,';
+        values += "'" +display +"',";
+      }
+
+      if(typeof definition !== 'undefined'){
+        column += 'definition,';
+        values += "'" +definition +"',";
+      }
+
+      var query = "UPSERT INTO BACIRO_FHIR.PARTICIPANT_REQUIRED(id," + column.slice(0, -1) + ") SELECT id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.PARTICIPANT_REQUIRED WHERE id = " + _id;
+      
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.PARTICIPANT_REQUIRED WHERE id = "+ _id;
+
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateParticipantRequired"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateParticipantRequired"});
+      });
+    },
+    participationStatus: function updateparticipationStatus(req, res){
+      var _id = req.params._id;
+      var code = req.body.code;
+      var display = req.body.display;
+      var definition = req.body.definition;
+      
+      //susun query update
+      var column = "";
+      var values = "";
+
+      if(typeof code !== 'undefined'){
+        column += 'code,';
+        values += "'" +code +"',";
+      }
+
+      if(typeof display !== 'undefined'){
+        column += 'display,';
+        values += "'" +display +"',";
+      }
+
+      if(typeof definition !== 'undefined'){
+        column += 'definition,';
+        values += "'" +definition +"',";
+      }
+
+      var query = "UPSERT INTO BACIRO_FHIR.PARTICIPATION_STATUS(id," + column.slice(0, -1) + ") SELECT id, " + values.slice(0, -1) + " FROM BACIRO_FHIR.PARTICIPATION_STATUS WHERE id = " + _id;
+      
+      db.upsert(query,function(succes){
+        var query = "SELECT id, code, display, definition FROM BACIRO_FHIR.PARTICIPATION_STATUS WHERE id = "+ _id;
+
+        db.query(query,function(dataJson){
+          rez = lowercaseObject(dataJson);
+          res.json({"err_code":0,"data":rez});
+        },function(e){
+          res.json({"err_code": 2, "err_msg":e, "application": "Api Phoenix", "function": "updateparticipationStatus"});
+        });
+      },function(e){
+          res.json({"err_code": 1, "err_msg":e, "application": "Api Phoenix", "function": "updateparticipationStatus"});
       });
     }
   }

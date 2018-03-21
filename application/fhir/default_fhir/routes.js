@@ -36,6 +36,16 @@ var routesDefaultFHIR = function(app, DefaultFHIR){
 	app.get('/:apikey/address-use/code/:code?', DefaultFHIR.get.addressUseCode);
 	app.get('/:apikey/address-type/:_id?', DefaultFHIR.get.addressType);
 	app.get('/:apikey/address-type/code/:code?', DefaultFHIR.get.addressTypeCode);
+	app.get('/:apikey/appointment-reason-code/:_id?', DefaultFHIR.get.appointmentReasonCode);
+	app.get('/:apikey/appointment-reason-code/code/:code?', DefaultFHIR.get.appointmentReasonCodeCode);
+	app.get('/:apikey/slot-status/:_id?', DefaultFHIR.get.slotStatus);
+	app.get('/:apikey/slot-status/code/:code?', DefaultFHIR.get.slotStatusCode);
+	app.get('/:apikey/appointment-status/:_id?', DefaultFHIR.get.appointmentStatus);
+	app.get('/:apikey/appointment-status/code/:code?', DefaultFHIR.get.appointmentStatusCode);
+	app.get('/:apikey/participant-required/:_id?', DefaultFHIR.get.participantRequired);
+	app.get('/:apikey/participant-required/code/:code?', DefaultFHIR.get.participantRequiredCode);
+	app.get('/:apikey/participation-status/:_id?', DefaultFHIR.get.participationStatus);
+	app.get('/:apikey/participation-status/code/:code?', DefaultFHIR.get.participationStatusCode);
 
 	//post method
 	app.post('/:apikey/identity-assuranceLevel', DefaultFHIR.post.identityAssuranceLevel);
@@ -56,6 +66,11 @@ var routesDefaultFHIR = function(app, DefaultFHIR){
 	app.post('/:apikey/contact-point-use', DefaultFHIR.post.contactPointUse);
 	app.post('/:apikey/address-use', DefaultFHIR.post.addressUse);
 	app.post('/:apikey/address-type', DefaultFHIR.post.addressType);
+	app.post('/:apikey/appointment-reason-code', DefaultFHIR.post.appointmentReasonCode);
+	app.post('/:apikey/slot-status', DefaultFHIR.post.slotStatus);
+	app.post('/:apikey/appointment-status', DefaultFHIR.post.appointmentStatus);
+	app.post('/:apikey/participant-required', DefaultFHIR.post.participantRequired);
+	app.post('/:apikey/participation-status', DefaultFHIR.post.participationStatus);
 
 	//put method
 	app.put('/:apikey/identity-assuranceLevel/:_id?', DefaultFHIR.put.identityAssuranceLevel);
@@ -76,5 +91,10 @@ var routesDefaultFHIR = function(app, DefaultFHIR){
 	app.put('/:apikey/contact-point-use/:_id?', DefaultFHIR.put.contactPointUse);
 	app.put('/:apikey/address-use/:_id?', DefaultFHIR.put.addressUse);
 	app.put('/:apikey/address-type/:_id?', DefaultFHIR.put.addressType);
+	app.put('/:apikey/appointment-reason-code/:_id?', DefaultFHIR.put.appointmentReasonCode);
+	app.put('/:apikey/slot-status/:_id?', DefaultFHIR.put.slotStatus);
+	app.put('/:apikey/appointment-status/:_id?', DefaultFHIR.put.appointmentStatus);
+	app.put('/:apikey/participant-required/:_id?', DefaultFHIR.put.participantRequired);
+	app.put('/:apikey/participation-status/:_id?', DefaultFHIR.put.participationStatus);
 }
 module.exports = routesDefaultFHIR;

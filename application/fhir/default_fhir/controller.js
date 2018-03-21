@@ -252,6 +252,9 @@ var controller = {
 								  	if(maritalStatus.err_code == 0){
 									  	//cek jumdata dulu
 									  	if(maritalStatus.data.length > 0){
+									  		for(i=0; i < maritalStatus.data.length; i++ ){
+									  			maritalStatus.data[i].system = host+ ':' + port + '/' + apikey + '/' + maritalStatus.data[i].system;
+									  		}
 									  		res.json({"err_code": 0, "data":maritalStatus.data});
 									  	}else{
 								  			res.json({"err_code": 2, "err_msg": "Marital Status is not found"});	
@@ -274,6 +277,7 @@ var controller = {
 									  	if(maritalStatus.err_code == 0){
 										  	//cek jumdata dulu
 										  	if(maritalStatus.data.length > 0){
+										  		maritalStatus.data[0].system = host+ ':' + port + '/' + apikey + '/' + maritalStatus.data[0].system;
 										  		res.json({"err_code": 0, "data":maritalStatus.data});
 										  	}else{
 									  			res.json({"err_code": 2, "err_msg": "Marital Status is not found"});	
@@ -952,6 +956,10 @@ var controller = {
 								  	if(relatedPersonRelationshipType.err_code == 0){
 									  	//cek jumdata dulu
 									  	if(relatedPersonRelationshipType.data.length > 0){
+									  		for(i=0; i < relatedPersonRelationshipType.data.length; i++ ){
+									  			relatedPersonRelationshipType.data[i].system = host+ ':' + port + '/' + apikey + '/' + relatedPersonRelationshipType.data[i].system;
+									  		}
+
 									  		res.json({"err_code": 0, "data":relatedPersonRelationshipType.data});
 									  	}else{
 								  			res.json({"err_code": 2, "err_msg": "Related Person Relationship Type is not found"});	
@@ -974,6 +982,9 @@ var controller = {
 									  	if(relatedPersonRelationshipType.err_code == 0){
 										  	//cek jumdata dulu
 										  	if(relatedPersonRelationshipType.data.length > 0){
+
+									  			relatedPersonRelationshipType.data[0].system = host+ ':' + port + '/' + apikey + '/' + relatedPersonRelationshipType.data[0].system;
+										  		
 										  		res.json({"err_code": 0, "data":relatedPersonRelationshipType.data});
 										  	}else{
 									  			res.json({"err_code": 2, "err_msg": "Related Person Relationship Type is not found"});	
@@ -1830,6 +1841,506 @@ var controller = {
 						}	
 					});
 				}
+			},
+			appointmentReasonCode: function getAppointmentReasonCode(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				
+				checkApikey(apikey, ipAddres, function(result){
+					if(result.err_code == 0){
+						if(_id == "" || typeof _id == 'undefined'){
+							//method, endpoint, params, options, callback
+							ApiFHIR.get('appointmentReasonCode', {"apikey": apikey, "_id": 0}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getAppointmentReasonCode"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var appointmentReasonCode = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(appointmentReasonCode.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(appointmentReasonCode.data.length > 0){
+									  		res.json({"err_code": 0, "data":appointmentReasonCode.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Appointment Reason Code is not found"});	
+									  	}
+								  	}else{
+								  		res.json(appointmentReasonCode);
+								  	}
+								  }
+							})	
+						}else{
+							if(validator.isInt(_id)){
+								ApiFHIR.get('appointmentReasonCode', {"apikey": apikey, "_id": _id}, {}, function(error, response, body){
+									if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getAppointmentReasonCode"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var appointmentReasonCode = JSON.parse(body); 
+									  	
+									  	//cek apakah ada error atau tidak
+									  	if(appointmentReasonCode.err_code == 0){
+										  	//cek jumdata dulu
+										  	if(appointmentReasonCode.data.length > 0){
+										  		res.json({"err_code": 0, "data":appointmentReasonCode.data});
+										  	}else{
+									  			res.json({"err_code": 2, "err_msg": "Appointment Reason Code is not found"});	
+										  	}
+									  	}else{
+									  		res.json(appointmentReasonCode);
+									  	}
+									  }
+								})
+							}else{
+								res.json({"err_code": 4, "err_msg": "Id must be a number."});
+							}
+							
+						}
+					}else{
+						result.err_code = 500;
+						res.json(result);
+					}	
+				});
+			},
+			appointmentReasonCodeCode: function getAppointmentReasonCodeCode(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var code = req.params.code.replace(/[^\w\s ,]/gi, '').trim().toUpperCase();
+
+				if(code == "" || typeof code == 'undefined'){
+					res.json({"err_code": 4, "err_msg": "Code is required."});
+				}else{
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){	
+							ApiFHIR.get('appointmentReasonCodeCode', {"apikey": apikey, "code": code}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getAddressTypeCode"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var appointmentReasonCode = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(appointmentReasonCode.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(appointmentReasonCode.data.length > 0){
+									  		res.json({"err_code": 0, "data":appointmentReasonCode.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Appointment Reason Code is not found"});	
+									  	}
+								  	}else{
+								  		res.json(appointmentReasonCode);
+								  	}
+								  }
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}
+			},
+			slotStatus: function getSlotStatus(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				
+				checkApikey(apikey, ipAddres, function(result){
+					if(result.err_code == 0){
+						if(_id == "" || typeof _id == 'undefined'){
+							//method, endpoint, params, options, callback
+							ApiFHIR.get('slotStatus', {"apikey": apikey, "_id": 0}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getSlotStatus"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var slotStatus = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(slotStatus.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(slotStatus.data.length > 0){
+									  		res.json({"err_code": 0, "data":slotStatus.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Slot Status is not found"});	
+									  	}
+								  	}else{
+								  		res.json(slotStatus);
+								  	}
+								  }
+							})	
+						}else{
+							if(validator.isInt(_id)){
+								ApiFHIR.get('slotStatus', {"apikey": apikey, "_id": _id}, {}, function(error, response, body){
+									if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getSlotStatus"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var slotStatus = JSON.parse(body); 
+									  	
+									  	//cek apakah ada error atau tidak
+									  	if(slotStatus.err_code == 0){
+										  	//cek jumdata dulu
+										  	if(slotStatus.data.length > 0){
+										  		res.json({"err_code": 0, "data":slotStatus.data});
+										  	}else{
+									  			res.json({"err_code": 2, "err_msg": "Slot Status is not found"});	
+										  	}
+									  	}else{
+									  		res.json(slotStatus);
+									  	}
+									  }
+								})
+							}else{
+								res.json({"err_code": 4, "err_msg": "Id must be a number."});
+							}
+							
+						}
+					}else{
+						result.err_code = 500;
+						res.json(result);
+					}	
+				});
+			},
+			slotStatusCode: function getSlotStatusCode(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var code = req.params.code.replace(/[^\w\s ,]/gi, '').trim().toLowerCase();
+
+				if(code == "" || typeof code == 'undefined'){
+					res.json({"err_code": 4, "err_msg": "Code is required."});
+				}else{
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){	
+							ApiFHIR.get('slotStatusCode', {"apikey": apikey, "code": code}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getSlotStatusCode"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var slotStatus = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(slotStatus.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(slotStatus.data.length > 0){
+									  		res.json({"err_code": 0, "data":slotStatus.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Slot Status Code is not found"});	
+									  	}
+								  	}else{
+								  		res.json(slotStatus);
+								  	}
+								  }
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}
+			},
+			appointmentStatus: function getAppointmentStatus(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				
+				checkApikey(apikey, ipAddres, function(result){
+					if(result.err_code == 0){
+						if(_id == "" || typeof _id == 'undefined'){
+							//method, endpoint, params, options, callback
+							ApiFHIR.get('appointmentStatus', {"apikey": apikey, "_id": 0}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getAppointmentStatus"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var appointmentStatus = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(appointmentStatus.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(appointmentStatus.data.length > 0){
+									  		res.json({"err_code": 0, "data":appointmentStatus.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Appointment Status is not found"});	
+									  	}
+								  	}else{
+								  		res.json(appointmentStatus);
+								  	}
+								  }
+							})	
+						}else{
+							if(validator.isInt(_id)){
+								ApiFHIR.get('appointmentStatus', {"apikey": apikey, "_id": _id}, {}, function(error, response, body){
+									if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getAppointmentStatus"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var appointmentStatus = JSON.parse(body); 
+									  	
+									  	//cek apakah ada error atau tidak
+									  	if(appointmentStatus.err_code == 0){
+										  	//cek jumdata dulu
+										  	if(appointmentStatus.data.length > 0){
+										  		res.json({"err_code": 0, "data":appointmentStatus.data});
+										  	}else{
+									  			res.json({"err_code": 2, "err_msg": "Appointment Status is not found"});	
+										  	}
+									  	}else{
+									  		res.json(appointmentStatus);
+									  	}
+									  }
+								})
+							}else{
+								res.json({"err_code": 4, "err_msg": "Id must be a number."});
+							}
+							
+						}
+					}else{
+						result.err_code = 500;
+						res.json(result);
+					}	
+				});
+			},
+			appointmentStatusCode: function getAppointmentStatusCode(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var code = req.params.code.replace(/[^\w\s ,]/gi, '').trim().toLowerCase();
+
+				if(code == "" || typeof code == 'undefined'){
+					res.json({"err_code": 4, "err_msg": "Code is required."});
+				}else{
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){	
+							ApiFHIR.get('appointmentStatusCode', {"apikey": apikey, "code": code}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getAppointmentStatusCode"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var appointmentStatus = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(appointmentStatus.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(appointmentStatus.data.length > 0){
+									  		res.json({"err_code": 0, "data":appointmentStatus.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Appointment Status Code is not found"});	
+									  	}
+								  	}else{
+								  		res.json(appointmentStatus);
+								  	}
+								  }
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}
+			},
+			participantRequired: function getParticipantRequired(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				
+				checkApikey(apikey, ipAddres, function(result){
+					if(result.err_code == 0){
+						if(_id == "" || typeof _id == 'undefined'){
+							//method, endpoint, params, options, callback
+							ApiFHIR.get('participantRequired', {"apikey": apikey, "_id": 0}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getParticipantRequired"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var participantRequired = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(participantRequired.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(participantRequired.data.length > 0){
+									  		res.json({"err_code": 0, "data":participantRequired.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Participant Required is not found"});	
+									  	}
+								  	}else{
+								  		res.json(participantRequired);
+								  	}
+								  }
+							})	
+						}else{
+							if(validator.isInt(_id)){
+								ApiFHIR.get('participantRequired', {"apikey": apikey, "_id": _id}, {}, function(error, response, body){
+									if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getParticipantRequired"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var participantRequired = JSON.parse(body); 
+									  	
+									  	//cek apakah ada error atau tidak
+									  	if(participantRequired.err_code == 0){
+										  	//cek jumdata dulu
+										  	if(participantRequired.data.length > 0){
+										  		res.json({"err_code": 0, "data":participantRequired.data});
+										  	}else{
+									  			res.json({"err_code": 2, "err_msg": "Participant Required is not found"});	
+										  	}
+									  	}else{
+									  		res.json(participantRequired);
+									  	}
+									  }
+								})
+							}else{
+								res.json({"err_code": 4, "err_msg": "Id must be a number."});
+							}
+							
+						}
+					}else{
+						result.err_code = 500;
+						res.json(result);
+					}	
+				});
+			},
+			participantRequiredCode: function getParticipantRequiredCode(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var code = req.params.code.replace(/[^\w\s ,]/gi, '').trim().toLowerCase();
+
+				if(code == "" || typeof code == 'undefined'){
+					res.json({"err_code": 4, "err_msg": "Code is required."});
+				}else{
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){	
+							ApiFHIR.get('appointmentStatusCode', {"apikey": apikey, "code": code}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getAppointmentStatusCode"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var appointmentStatus = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(appointmentStatus.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(appointmentStatus.data.length > 0){
+									  		res.json({"err_code": 0, "data":appointmentStatus.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Participant Required Code is not found"});	
+									  	}
+								  	}else{
+								  		res.json(appointmentStatus);
+								  	}
+								  }
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}
+			},
+			participationStatus: function getParticipationStatus(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				
+				checkApikey(apikey, ipAddres, function(result){
+					if(result.err_code == 0){
+						if(_id == "" || typeof _id == 'undefined'){
+							//method, endpoint, params, options, callback
+							ApiFHIR.get('participationStatus', {"apikey": apikey, "_id": 0}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getParticipationStatus"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var participationStatus = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(participationStatus.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(participationStatus.data.length > 0){
+									  		res.json({"err_code": 0, "data":participationStatus.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Participation Status is not found"});	
+									  	}
+								  	}else{
+								  		res.json(participationStatus);
+								  	}
+								  }
+							})	
+						}else{
+							if(validator.isInt(_id)){
+								ApiFHIR.get('participationStatus', {"apikey": apikey, "_id": _id}, {}, function(error, response, body){
+									if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getParticipationStatus"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var participationStatus = JSON.parse(body); 
+									  	
+									  	//cek apakah ada error atau tidak
+									  	if(participationStatus.err_code == 0){
+										  	//cek jumdata dulu
+										  	if(participationStatus.data.length > 0){
+										  		res.json({"err_code": 0, "data":participationStatus.data});
+										  	}else{
+									  			res.json({"err_code": 2, "err_msg": "Participation Status is not found"});	
+										  	}
+									  	}else{
+									  		res.json(participationStatus);
+									  	}
+									  }
+								})
+							}else{
+								res.json({"err_code": 4, "err_msg": "Id must be a number."});
+							}
+							
+						}
+					}else{
+						result.err_code = 500;
+						res.json(result);
+					}	
+				});
+			},
+			participationStatusCode: function getparticipationStatusCode(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var code = req.params.code.replace(/[^\w\s ,]/gi, '').trim().toLowerCase();
+
+				if(code == "" || typeof code == 'undefined'){
+					res.json({"err_code": 4, "err_msg": "Code is required."});
+				}else{
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){	
+							ApiFHIR.get('participationStatusCode', {"apikey": apikey, "code": code}, {}, function(error, response, body){
+								if(error){
+								  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "getParticipationStatusCode"});
+								  }else{
+								  	//cek apakah ada error atau tidak
+								  	var participationStatus = JSON.parse(body); 
+								  	
+								  	//cek apakah ada error atau tidak
+								  	if(participationStatus.err_code == 0){
+									  	//cek jumdata dulu
+									  	if(participationStatus.data.length > 0){
+									  		res.json({"err_code": 0, "data":participationStatus.data});
+									  	}else{
+								  			res.json({"err_code": 2, "err_msg": "Participant Status Code is not found"});	
+									  	}
+								  	}else{
+								  		res.json(participationStatus);
+								  	}
+								  }
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}
 			}
 		},
 		post: {
@@ -1976,9 +2487,9 @@ var controller = {
 				var definition = req.body.definition.replace(/[^\w\s ,]/gi, '');
 				
 				if(code == 'UNK'){
-					var maritalSystem = host + ':' + port + '/' + apikey + '/null-flavor';	
+					var maritalSystem = 'null-flavor';	
 				}else{
-					var maritalSystem = host + ':' + port + '/' + apikey + '/marital-status';
+					var maritalSystem = 'marital-status';
 				}
 				
 
@@ -2422,7 +2933,7 @@ var controller = {
 				
 				var code = req.body.code.trim().toUpperCase();
 				var display = req.body.display;
-				var system  = host + ':' + port + '/' + apikey + '/relatedperson-relationshiptype';
+				var system  = 'relatedperson-relationshiptype';
 				var err_code = 0;
 				var err_msg = '';
 				
@@ -3012,6 +3523,334 @@ var controller = {
 				}else{
 					res.json({"err_code": err_code, "err_msg": err_msg});
 				}
+			},
+			appointmentReasonCode: function addAppointmentReasonCode(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				
+				var code = req.body.code.trim().toUpperCase();
+				var description = req.body.description.replace(/[^\w\s , ( ) / .]/gi, '');
+				
+				var err_code = 0;
+				var err_msg = '';
+				
+				//input checking
+				if(validator.isEmpty(code)){
+					err_code = 1;
+					err_msg = "Code is required";
+				}
+
+				if(validator.isEmpty(description)){
+					err_code = 2;
+					err_msg = "Description is required";
+				}
+
+				if(err_code == 0){
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){
+							checkCode(apikey, code, 'APPOINTMENT_REASON_CODE', function(resultCode){
+								if(resultCode.err_code == 0){
+									//susun body
+									var dataAppointmentReasonCode = {
+														"code": code,
+														"description": description
+													};
+								
+									//method, endpoint, params, options, callback
+									ApiFHIR.post('appointmentReasonCode', {"apikey": apikey}, {body: dataAppointmentReasonCode, json:true}, function(error, response, body){
+										if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "addAppointmentReasonCode"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var appointmentReasonCode = body; //object
+									  	//cek apakah ada error atau tidak
+									  	if(appointmentReasonCode.err_code == 0){
+										  	res.json({"err_code": 0, "err_msg": "Appointment Reason Code has been add.", "data":appointmentReasonCode.data});
+									  	}else{
+									  		res.json(appointmentReasonCode);
+									  	}
+									  }
+									})
+								}else{
+									res.json(resultCode);
+								}
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}else{
+					res.json({"err_code": err_code, "err_msg": err_msg});
+				}
+			},
+			slotStatus: function addSlotStatus(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				
+				var code = req.body.code.trim().toLowerCase();
+				var display = req.body.display.replace(/[^\w\s , ( ) / .]/gi, '');
+				var definition = req.body.definition.replace(/[^\w\s , ( ) / .]/gi, '');
+				
+				var err_code = 0;
+				var err_msg = '';
+				
+				//input checking
+				if(validator.isEmpty(code)){
+					err_code = 1;
+					err_msg = "Code is required";
+				}
+
+				if(validator.isEmpty(display)){
+					err_code = 2;
+					err_msg = "Display is required";
+				}
+
+				if(validator.isEmpty(definition)){
+					err_code = 2;
+					err_msg = "Definition is required";
+				}
+
+				if(err_code == 0){
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){
+							checkCode(apikey, code, 'SLOT_STATUS', function(resultCode){
+								if(resultCode.err_code == 0){
+									//susun body
+									var dataSlotStatus = {
+														"code": code,
+														"display": display,
+														"definition": definition
+													};
+								
+									//method, endpoint, params, options, callback
+									ApiFHIR.post('slotStatus', {"apikey": apikey}, {body: dataSlotStatus, json:true}, function(error, response, body){
+										if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "addSlotStatus"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var slotStatus = body; //object
+									  	//cek apakah ada error atau tidak
+									  	if(slotStatus.err_code == 0){
+										  	res.json({"err_code": 0, "err_msg": "Slot Status has been add.", "data":slotStatus.data});
+									  	}else{
+									  		res.json(slotStatus);
+									  	}
+									  }
+									})
+								}else{
+									res.json(resultCode);
+								}
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}else{
+					res.json({"err_code": err_code, "err_msg": err_msg});
+				}
+			},
+			appointmentStatus: function addAppointmentStatus(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				
+				var code = req.body.code.trim().toLowerCase();
+				var display = req.body.display.replace(/[^\w\s , ( ) / .]/gi, '');
+				var definition = req.body.definition.replace(/[^\w\s , ( ) / .]/gi, '');
+				
+				var err_code = 0;
+				var err_msg = '';
+				
+				//input checking
+				if(validator.isEmpty(code)){
+					err_code = 1;
+					err_msg = "Code is required";
+				}
+
+				if(validator.isEmpty(display)){
+					err_code = 2;
+					err_msg = "Display is required";
+				}
+
+				if(validator.isEmpty(definition)){
+					err_code = 2;
+					err_msg = "Definition is required";
+				}
+
+				if(err_code == 0){
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){
+							checkCode(apikey, code, 'APPOINTMENT_STATUS', function(resultCode){
+								if(resultCode.err_code == 0){
+									//susun body
+									var dataAppointmentStatus = {
+														"code": code,
+														"display": display,
+														"definition": definition
+													};
+								
+									//method, endpoint, params, options, callback
+									ApiFHIR.post('appointmentStatus', {"apikey": apikey}, {body: dataAppointmentStatus, json:true}, function(error, response, body){
+										if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "addAppointmentStatus"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var appointmentStatus = body; //object
+									  	//cek apakah ada error atau tidak
+									  	if(appointmentStatus.err_code == 0){
+										  	res.json({"err_code": 0, "err_msg": "Appointment Status has been add.", "data":appointmentStatus.data});
+									  	}else{
+									  		res.json(appointmentStatus);
+									  	}
+									  }
+									})
+								}else{
+									res.json(resultCode);
+								}
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}else{
+					res.json({"err_code": err_code, "err_msg": err_msg});
+				}
+			},
+			participantRequired: function addParticipantRequired(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				
+				var code = req.body.code.trim().toLowerCase();
+				var display = req.body.display.replace(/[^\w\s , ( ) / .]/gi, '');
+				var definition = req.body.definition.replace(/[^\w\s , ( ) / .]/gi, '');
+				
+				var err_code = 0;
+				var err_msg = '';
+				
+				//input checking
+				if(validator.isEmpty(code)){
+					err_code = 1;
+					err_msg = "Code is required";
+				}
+
+				if(validator.isEmpty(display)){
+					err_code = 2;
+					err_msg = "Display is required";
+				}
+
+				if(validator.isEmpty(definition)){
+					err_code = 2;
+					err_msg = "Definition is required";
+				}
+
+				if(err_code == 0){
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){
+							checkCode(apikey, code, 'PARTICIPANT_REQUIRED', function(resultCode){
+								if(resultCode.err_code == 0){
+									//susun body
+									var dataParticipantRequired = {
+														"code": code,
+														"display": display,
+														"definition": definition
+													};
+								
+									//method, endpoint, params, options, callback
+									ApiFHIR.post('participantRequired', {"apikey": apikey}, {body: dataParticipantRequired, json:true}, function(error, response, body){
+										if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "addParticipantRequired"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var participantRequired = body; //object
+									  	//cek apakah ada error atau tidak
+									  	if(participantRequired.err_code == 0){
+										  	res.json({"err_code": 0, "err_msg": "Participant Required has been add.", "data":participantRequired.data});
+									  	}else{
+									  		res.json(participantRequired);
+									  	}
+									  }
+									})
+								}else{
+									res.json(resultCode);
+								}
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}else{
+					res.json({"err_code": err_code, "err_msg": err_msg});
+				}
+			},
+			participationStatus: function addparticipationStatus(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				
+				var code = req.body.code.trim().toLowerCase();
+				var display = req.body.display.replace(/[^\w\s , ( ) / .]/gi, '');
+				var definition = req.body.definition.replace(/[^\w\s , ( ) / .]/gi, '');
+				
+				var err_code = 0;
+				var err_msg = '';
+				
+				//input checking
+				if(validator.isEmpty(code)){
+					err_code = 1;
+					err_msg = "Code is required";
+				}
+
+				if(validator.isEmpty(display)){
+					err_code = 2;
+					err_msg = "Display is required";
+				}
+
+				if(validator.isEmpty(definition)){
+					err_code = 2;
+					err_msg = "Definition is required";
+				}
+
+				if(err_code == 0){
+					checkApikey(apikey, ipAddres, function(result){
+						if(result.err_code == 0){
+							checkCode(apikey, code, 'PARTICIPATION_STATUS', function(resultCode){
+								if(resultCode.err_code == 0){
+									//susun body
+									var dataparticipationStatus = {
+														"code": code,
+														"display": display,
+														"definition": definition
+													};
+								
+									//method, endpoint, params, options, callback
+									ApiFHIR.post('participationStatus', {"apikey": apikey}, {body: dataparticipationStatus, json:true}, function(error, response, body){
+										if(error){
+									  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "addparticipationStatus"});
+									  }else{
+									  	//cek apakah ada error atau tidak
+									  	var participationStatus = body; //object
+									  	//cek apakah ada error atau tidak
+									  	if(participationStatus.err_code == 0){
+										  	res.json({"err_code": 0, "err_msg": "Participant Status has been add.", "data":participationStatus.data});
+									  	}else{
+									  		res.json(participationStatus);
+									  	}
+									  }
+									})
+								}else{
+									res.json(resultCode);
+								}
+							})
+						}else{
+							result.err_code = 500;
+							res.json(result);
+						}	
+					});
+				}else{
+					res.json({"err_code": err_code, "err_msg": err_msg});
+				}
 			}
 		},
 		put: {
@@ -3202,6 +4041,11 @@ var controller = {
 				if(typeof req.body.display !== 'undefined'){
 					var display = req.body.display;
 					dataMaritalStatus.display = display;
+				}
+
+				if(typeof req.body.system !== 'undefined'){
+					var system = req.body.system;
+					dataMaritalStatus.system = system;
 				}
 
 				if(typeof req.body.definition !== 'undefined'){
@@ -4516,6 +5360,418 @@ var controller = {
 												  		res.json({"err_code": 3, "err_msg": addressType.error, "application": "Api FHIR", "function": "updateAddressType"});
 												  	}
 												  }
+											})
+										}
+									}else{
+										res.json(resultCheckId);
+									}
+								})
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": 4, "err_msg": "Id must be a number."});	
+					}
+				}
+			},
+			appointmentReasonCode: function updateAppointmentReasonCode(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				var dataAppointmentReasonCode = {};
+
+				if(typeof req.body.code !== 'undefined'){
+					var code = req.body.code.trim().toUpperCase();
+					dataAppointmentReasonCode.code = code;
+				}
+
+				if(typeof req.body.description !== 'undefined'){
+					var description = req.body.description.replace(/[^\w\s , ( ) / .]/gi, '');
+					dataAppointmentReasonCode.description = description;
+				}
+
+				if(_id == "" || typeof _id == 'undefined'){
+					res.json({"err_code": 5, "err_msg": "Id is required."});	
+				}else{
+					if(validator.isInt(_id)){
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkId(apikey, _id, 'APPOINTMENT_REASON_CODE', function(resultCheckId){
+									if(resultCheckId.err_code == 0){
+										if(typeof req.body.code !== 'undefined'){
+											checkCode(apikey, code, 'APPOINTMENT_REASON_CODE', function(resultCode){
+												if(resultCode.err_code == 0){
+													//method, endpoint, params, options, callback
+													ApiFHIR.put('appointmentReasonCode', {"apikey": apikey, "_id": _id}, {body: dataAppointmentReasonCode, json: true}, function(error, response, body){
+														if(error){
+													  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateAppointmentReasonCode"});
+													  }else{
+													  	//cek apakah ada error atau tidak
+													  	var appointmentReasonCode = body; 
+													  	
+													  	//cek apakah ada error atau tidak
+													  	if(appointmentReasonCode.err_code == 0){
+														  	res.json({"err_code": 0, "err_msg": "Appointment Reason Code has been update.","data":appointmentReasonCode.data});
+													  	}else{
+													  		res.json(appointmentReasonCode);
+													  	}
+													  }
+													})
+												}else{
+													res.json(resultCode);
+												}
+											})
+										}else{
+											//method, endpoint, params, options, callback
+											ApiFHIR.put('appointmentReasonCode', {"apikey": apikey, "_id": _id}, {body: dataAppointmentReasonCode, json: true}, function(error, response, body){
+												if(error){
+											  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateAppointmentReasonCode"});
+											  }else{
+											  	//cek apakah ada error atau tidak
+											  	var appointmentReasonCode = body; 
+											  	
+											  	//cek apakah ada error atau tidak
+											  	if(appointmentReasonCode.err_code == 0){
+												  	res.json({"err_code": 0, "err_msg": "Appointment Reason Code has been update.","data":appointmentReasonCode.data});
+											  	}else{
+											  		res.json(appointmentReasonCode);
+											  	}
+											  }
+											})
+										}
+									}else{
+										res.json(resultCheckId);
+									}
+								})
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": 4, "err_msg": "Id must be a number."});	
+					}
+				}
+			},
+			slotStatus: function updateSlotStatus(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				var dataSlotStatus = {};
+
+				if(typeof req.body.code !== 'undefined'){
+					var code = req.body.code.trim().toLowerCase();
+					dataSlotStatus.code = code;
+				}
+
+				if(typeof req.body.display !== 'undefined'){
+					display = req.body.display;
+					dataSlotStatus.display = display;
+				}
+
+				if(typeof req.body.definition !== 'undefined'){
+					var definition = req.body.definition.replace(/[^\w\s , ( ) / .]/gi, '');
+					dataSlotStatus.definition = definition;
+				}
+
+				if(_id == "" || typeof _id == 'undefined'){
+					res.json({"err_code": 5, "err_msg": "Id is required."});	
+				}else{
+					if(validator.isInt(_id)){
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkId(apikey, _id, 'SLOT_STATUS', function(resultCheckId){
+									if(resultCheckId.err_code == 0){
+										if(typeof req.body.code !== 'undefined'){
+											checkCode(apikey, code, 'SLOT_STATUS', function(resultCode){
+												if(resultCode.err_code == 0){
+													//method, endpoint, params, options, callback
+													ApiFHIR.put('slotStatus', {"apikey": apikey, "_id": _id}, {body: dataSlotStatus, json: true}, function(error, response, body){
+														if(error){
+													  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateSlotStatus"});
+													  }else{
+													  	//cek apakah ada error atau tidak
+													  	var slotStatus = body; 
+													  	//cek apakah ada error atau tidak
+													  	if(slotStatus.err_code == 0){
+														  	res.json({"err_code": 0, "err_msg": "Slot Status has been update.","data":slotStatus.data});
+													  	}else{
+													  		res.json(slotStatus);
+													  	}
+													  }
+													})
+												}else{
+													res.json(resultCode);
+												}
+											})
+										}else{
+											//method, endpoint, params, options, callback
+											ApiFHIR.put('slotStatus', {"apikey": apikey, "_id": _id}, {body: dataSlotStatus, json: true}, function(error, response, body){
+												if(error){
+											  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateSlotStatus"});
+											  }else{
+											  	//cek apakah ada error atau tidak
+											  	var slotStatus = body; 
+											  	//cek apakah ada error atau tidak
+											  	if(slotStatus.err_code == 0){
+												  	res.json({"err_code": 0, "err_msg": "Slot Status has been update.","data":slotStatus.data});
+											  	}else{
+											  		res.json(slotStatus);
+											  	}
+											  }
+											})
+										}
+									}else{
+										res.json(resultCheckId);
+									}
+								})
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": 4, "err_msg": "Id must be a number."});	
+					}
+				}
+			},
+			appointmentStatus: function updateAppointmentStatus(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				var dataAppointmentStatus = {};
+
+				if(typeof req.body.code !== 'undefined'){
+					var code = req.body.code.trim().toLowerCase();
+					dataAppointmentStatus.code = code;
+				}
+
+				if(typeof req.body.display !== 'undefined'){
+					display = req.body.display;
+					dataAppointmentStatus.display = display;
+				}
+
+				if(typeof req.body.definition !== 'undefined'){
+					var definition = req.body.definition.replace(/[^\w\s , ( ) / .]/gi, '');
+					dataAppointmentStatus.definition = definition;
+				}
+
+				if(_id == "" || typeof _id == 'undefined'){
+					res.json({"err_code": 5, "err_msg": "Id is required."});	
+				}else{
+					if(validator.isInt(_id)){
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkId(apikey, _id, 'APPOINTMENT_STATUS', function(resultCheckId){
+									if(resultCheckId.err_code == 0){
+										if(typeof req.body.code !== 'undefined'){
+											checkCode(apikey, code, 'APPOINTMENT_STATUS', function(resultCode){
+												if(resultCode.err_code == 0){
+													//method, endpoint, params, options, callback
+													ApiFHIR.put('appointmentStatus', {"apikey": apikey, "_id": _id}, {body: dataAppointmentStatus, json: true}, function(error, response, body){
+														if(error){
+													  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateAppointmentStatus"});
+													  }else{
+													  	//cek apakah ada error atau tidak
+													  	var appointmentStatus = body; 
+													  	//cek apakah ada error atau tidak
+													  	if(appointmentStatus.err_code == 0){
+														  	res.json({"err_code": 0, "err_msg": "Appointment Status has been update.","data":appointmentStatus.data});
+													  	}else{
+													  		res.json(appointmentStatus);
+													  	}
+													  }
+													})
+												}else{
+													res.json(resultCode);
+												}
+											})
+										}else{
+											//method, endpoint, params, options, callback
+											ApiFHIR.put('appointmentStatus', {"apikey": apikey, "_id": _id}, {body: dataAppointmentStatus, json: true}, function(error, response, body){
+												if(error){
+											  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateAppointmentStatus"});
+											  }else{
+											  	//cek apakah ada error atau tidak
+											  	var appointmentStatus = body; 
+											  	//cek apakah ada error atau tidak
+											  	if(appointmentStatus.err_code == 0){
+												  	res.json({"err_code": 0, "err_msg": "Appointment Status has been update.","data":appointmentStatus.data});
+											  	}else{
+											  		res.json(appointmentStatus);
+											  	}
+											  }
+											})
+										}
+									}else{
+										res.json(resultCheckId);
+									}
+								})
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": 4, "err_msg": "Id must be a number."});	
+					}
+				}
+			},
+			participantRequired: function updateParticipantRequired(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				var dataParticipantRequired = {};
+
+				if(typeof req.body.code !== 'undefined'){
+					var code = req.body.code.trim().toLowerCase();
+					dataParticipantRequired.code = code;
+				}
+
+				if(typeof req.body.display !== 'undefined'){
+					display = req.body.display;
+					dataParticipantRequired.display = display;
+				}
+
+				if(typeof req.body.definition !== 'undefined'){
+					var definition = req.body.definition.replace(/[^\w\s , ( ) / .]/gi, '');
+					dataParticipantRequired.definition = definition;
+				}
+
+				if(_id == "" || typeof _id == 'undefined'){
+					res.json({"err_code": 5, "err_msg": "Id is required."});	
+				}else{
+					if(validator.isInt(_id)){
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkId(apikey, _id, 'PARTICIPANT_REQUIRED', function(resultCheckId){
+									if(resultCheckId.err_code == 0){
+										if(typeof req.body.code !== 'undefined'){
+											checkCode(apikey, code, 'PARTICIPANT_REQUIRED', function(resultCode){
+												if(resultCode.err_code == 0){
+													//method, endpoint, params, options, callback
+													ApiFHIR.put('participantRequired', {"apikey": apikey, "_id": _id}, {body: dataParticipantRequired, json: true}, function(error, response, body){
+														if(error){
+													  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateParticipantRequired"});
+													  }else{
+													  	//cek apakah ada error atau tidak
+													  	var participantRequired = body; 
+													  	//cek apakah ada error atau tidak
+													  	if(participantRequired.err_code == 0){
+														  	res.json({"err_code": 0, "err_msg": "Participant Required has been update.","data":participantRequired.data});
+													  	}else{
+													  		res.json(participantRequired);
+													  	}
+													  }
+													})
+												}else{
+													res.json(resultCode);
+												}
+											})
+										}else{
+											//method, endpoint, params, options, callback
+											ApiFHIR.put('participantRequired', {"apikey": apikey, "_id": _id}, {body: dataParticipantRequired, json: true}, function(error, response, body){
+												if(error){
+											  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateParticipantRequired"});
+											  }else{
+											  	//cek apakah ada error atau tidak
+											  	var participantRequired = body; 
+											  	//cek apakah ada error atau tidak
+											  	if(participantRequired.err_code == 0){
+												  	res.json({"err_code": 0, "err_msg": "Participant Required has been update.","data":participantRequired.data});
+											  	}else{
+											  		res.json(participantRequired);
+											  	}
+											  }
+											})
+										}
+									}else{
+										res.json(resultCheckId);
+									}
+								})
+							}else{
+								result.err_code = 500;
+								res.json(result);
+							}	
+						});
+					}else{
+						res.json({"err_code": 4, "err_msg": "Id must be a number."});	
+					}
+				}
+			},
+			participationStatus: function updateparticipationStatus(req, res){
+				var ipAddres = req.connection.remoteAddress;
+				var apikey = req.params.apikey;
+				var _id = req.params._id;
+
+				var dataparticipationStatus = {};
+
+				if(typeof req.body.code !== 'undefined'){
+					var code = req.body.code.trim().toLowerCase();
+					dataparticipationStatus.code = code;
+				}
+
+				if(typeof req.body.display !== 'undefined'){
+					display = req.body.display;
+					dataparticipationStatus.display = display;
+				}
+
+				if(typeof req.body.definition !== 'undefined'){
+					var definition = req.body.definition.replace(/[^\w\s , ( ) / .]/gi, '');
+					dataparticipationStatus.definition = definition;
+				}
+
+				if(_id == "" || typeof _id == 'undefined'){
+					res.json({"err_code": 5, "err_msg": "Id is required."});	
+				}else{
+					if(validator.isInt(_id)){
+						checkApikey(apikey, ipAddres, function(result){
+							if(result.err_code == 0){
+								checkId(apikey, _id, 'PARTICIPATION_STATUS', function(resultCheckId){
+									if(resultCheckId.err_code == 0){
+										if(typeof req.body.code !== 'undefined'){
+											checkCode(apikey, code, 'PARTICIPATION_STATUS', function(resultCode){
+												if(resultCode.err_code == 0){
+													//method, endpoint, params, options, callback
+													ApiFHIR.put('participationStatus', {"apikey": apikey, "_id": _id}, {body: dataparticipationStatus, json: true}, function(error, response, body){
+														if(error){
+													  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateparticipationStatus"});
+													  }else{
+													  	//cek apakah ada error atau tidak
+													  	var participationStatus = body; 
+													  	//cek apakah ada error atau tidak
+													  	if(participationStatus.err_code == 0){
+														  	res.json({"err_code": 0, "err_msg": "Participant Status has been update.","data":participationStatus.data});
+													  	}else{
+													  		res.json(participationStatus);
+													  	}
+													  }
+													})
+												}else{
+													res.json(resultCode);
+												}
+											})
+										}else{
+											//method, endpoint, params, options, callback
+											ApiFHIR.put('participationStatus', {"apikey": apikey, "_id": _id}, {body: dataparticipationStatus, json: true}, function(error, response, body){
+												if(error){
+											  	res.json({"err_code": 1, "err_msg": error, "application": "Api FHIR", "function": "updateparticipationStatus"});
+											  }else{
+											  	//cek apakah ada error atau tidak
+											  	var participationStatus = body; 
+											  	//cek apakah ada error atau tidak
+											  	if(participationStatus.err_code == 0){
+												  	res.json({"err_code": 0, "err_msg": "Participant Status has been update.","data":dataparticipationStatus.data});
+											  	}else{
+											  		res.json(participationStatus);
+											  	}
+											  }
 											})
 										}
 									}else{

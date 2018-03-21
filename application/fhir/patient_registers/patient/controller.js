@@ -324,8 +324,8 @@ var controller = {
 								  	if(patient.data.length > 0){
 								  		newPatient = [];
 								  		for(i=0; i < patient.data.length; i++){
-								  			myEmitter.once("getPatientAnimal", function(patient, index, newPatient, countPatient){
-								  				myEmitter.once("getAttachment", function(patient, index, newPatient, countPatient){
+								  			myEmitter.prependOnceListener("getPatientAnimal", function(patient, index, newPatient, countPatient){
+								  				myEmitter.prependOnceListener("getAttachment", function(patient, index, newPatient, countPatient){
 										  			qString = {};
 										  			qString.patient_id = patient.id;
 											  		seedPhoenixFHIR.path.GET = {
@@ -357,7 +357,7 @@ var controller = {
 																
 																newPatient[index] = objectPatient;
 
-																myEmitter.once("getIdentifier", function(patient, index, newPatient, countPatient){
+																myEmitter.prependOnceListener("getIdentifier", function(patient, index, newPatient, countPatient){
 																	//get identifier
 													  			qString = {};
 													  			qString.patient_id = patient.id;
@@ -391,7 +391,7 @@ var controller = {
 																			newPatient[index] = objectPatient
 
 																			//human_name
-																			myEmitter.once('getHumanName', function(patient, index, newPatient, countPatient){
+																			myEmitter.prependOnceListener('getHumanName', function(patient, index, newPatient, countPatient){
 																				qString = {};
 																  			qString.patient_id = patient.id;
 																	  		seedPhoenixFHIR.path.GET = {
@@ -424,7 +424,7 @@ var controller = {
 
 																						newPatient[index] = objectPatient;
 																						
-																						myEmitter.once('getContactPoint', function(patient, index, newPatient, countPatient){
+																						myEmitter.prependOnceListener('getContactPoint', function(patient, index, newPatient, countPatient){
 																							qString = {};
 																			  			qString.patient_id = patient.id;
 																				  		seedPhoenixFHIR.path.GET = {
@@ -459,7 +459,7 @@ var controller = {
 
 																									newPatient[index] = objectPatient;
 																									
-																									myEmitter.once('getAddress', function(patient, index, newPatient, countPatient){
+																									myEmitter.prependOnceListener('getAddress', function(patient, index, newPatient, countPatient){
 																										qString = {};
 																						  			qString.patient_id = patient.id;
 																							  		seedPhoenixFHIR.path.GET = {
@@ -496,7 +496,7 @@ var controller = {
 
 																												newPatient[index] = objectPatient;
 																												
-																												myEmitter.once("getPatientContact", function(patient, index, newPatient, countPatien){
+																												myEmitter.prependOnceListener("getPatientContact", function(patient, index, newPatient, countPatien){
 																													qString = {};
 																									  			qString.patient_id = patient.id;
 																										  		seedPhoenixFHIR.path.GET = {
@@ -542,7 +542,7 @@ var controller = {
 
 																															newPatient[index] = objectPatient;
 
-																															myEmitter.once("getPatientLink", function(patient, index, newPatient, countPatien){
+																															myEmitter.prependOnceListener("getPatientLink", function(patient, index, newPatient, countPatien){
 																																qString = {};
 																												  			qString.patient_id = patient.id;
 																													  		seedPhoenixFHIR.path.GET = {
@@ -580,7 +580,7 @@ var controller = {
 
 																																		newPatient[index] = objectPatient;
 																																		
-																																		myEmitter.once("getGeneralPractitioner", function(patient, index, newPatient, countPatien){
+																																		myEmitter.prependOnceListener("getGeneralPractitioner", function(patient, index, newPatient, countPatien){
 																																			qString = {};
 																															  			qString.patient_id = patient.id;
 																																  		seedPhoenixFHIR.path.GET = {
@@ -618,7 +618,7 @@ var controller = {
 
 																																					newPatient[index] = objectPatient;
 
-																																					myEmitter.once("getPatientCommunication", function(patient, index, newPatient, countPatien){
+																																					myEmitter.prependOnceListener("getPatientCommunication", function(patient, index, newPatient, countPatien){
 																																						qString = {};
 																																		  			qString.patient_id = patient.id;
 																																			  		seedPhoenixFHIR.path.GET = {
@@ -2115,7 +2115,7 @@ var controller = {
 																																									if(resContactGender.err_code > 0){
 																																										checkCode(apikey, communicationLanguageCode, 'LANGUAGES', function(resComLang){
 																																											if(resComLang.err_code > 0){
-																																												myEmitter.once('checkIdentifierValue', function(){
+																																												myEmitter.prependOnceListener('checkIdentifierValue', function(){
 																																													checkUniqeValue(apikey, "IDENTIFIER_VALUE|" + identifierValue, 'IDENTIFIER', function(resUniqeValue){
 																																														if(resUniqeValue.err_code == 0){ //untuk ini nilai code harus sama dengan 0, menunjukan value tersebut belum ada
 																																															checkUniqeValue(apikey, "CONTACT_POINT_VALUE|" + contactPointValue, 'CONTACT_POINT', function(resContactPointValue){
@@ -2135,7 +2135,7 @@ var controller = {
 																																																			var patientContactId = 'pc' + uniqid.time();
 																																																			var generalPractitionerId = 'gp' + uniqid.time();
 																																																			//set by sistem
-																																																			var identifierSystem = host + ':' + port + '/' + apikey + '/Patient/'+ patientId +'/Identifier/'+ identifierId;
+																																																			var identifierSystem = identifierId;
 																																																			/**
 																																																				proses insert
 																																																				1. Patient Animal (If true)
@@ -2277,7 +2277,7 @@ var controller = {
 																																																														"hash": sha1(attachmentData),
 																																																														"title": attachmentTitle,
 																																																														"creation": getFormattedDate(),
-																																																														"url": host + ':' + port + '/' + apikey + '/Patient/'+patientId+'/Photo/' + attachmentId,
+																																																														"url": attachmentId,
 																																																														"patient_id": patientId
 																																																													}
 																																																			
@@ -2447,7 +2447,7 @@ var controller = {
 																																													})
 																																												})
 																																												//animal
-																																												myEmitter.once('checkAnimal', function(){
+																																												myEmitter.prependOnceListener('checkAnimal', function(){
 																																													if(!validator.isEmpty(animalSpeciesCode) && !validator.isEmpty(animalBreedCode)){
 																																														checkCode(apikey, animalSpeciesCode, 'ANIMAL_SPECIES', function(resAnimalSpecies){
 																																															if(resAnimalSpecies.err_code > 0){
@@ -2468,7 +2468,7 @@ var controller = {
 																																												})
 																																												
 																																												//linkOther
-																																												myEmitter.once('checkLinkOther', function(){
+																																												myEmitter.prependOnceListener('checkLinkOther', function(){
 																																													if(!validator.isEmpty(linkOtherPatientId)){
 																																														checkUniqeValue(apikey, "PATIENT_ID|" + linkOtherPatientId, 'PATIENT', function(resOther){
 																																															if(resOther.err_code > 0){
@@ -2503,7 +2503,7 @@ var controller = {
 																																												})
 
 																																												//managingOrganization
-																																												myEmitter.once('checkManagingOrganization', function(){
+																																												myEmitter.prependOnceListener('checkManagingOrganization', function(){
 																																													if(!validator.isEmpty(managingOrganizationOrganizationId)){
 																																														checkUniqeValue(apikey, "ORGANIZATION_ID|" + managingOrganizationOrganizationId, 'ORGANIZATION', function(resGPO){
 																																															if(resGPO.err_code > 0){
@@ -2518,7 +2518,7 @@ var controller = {
 																																												})
 
 																																												//generalPractitioner
-																																												myEmitter.once('checkGeneralPractitioner', function(){
+																																												myEmitter.prependOnceListener('checkGeneralPractitioner', function(){
 																																													if(!validator.isEmpty(generalPractitionerOrganizationId)){
 																																														checkUniqeValue(apikey, "ORGANIZATION_ID|" + generalPractitionerOrganizationId, 'ORGANIZATION', function(resGPO){
 																																															if(resGPO.err_code > 0){
@@ -2710,9 +2710,6 @@ var controller = {
 						err_msg = "Please add key 'period' in json identifier request.";
 					}  
 
-					//set by sistem
-					var identifierSystem = host + ':' + port + '/' + apikey + '/Patient/'+ patientId +'/Identifier/'+ identifierId;
-
 					if(err_code == 0){
 						//check apikey
 						checkApikey(apikey, ipAddres, function(result){
@@ -2726,6 +2723,9 @@ var controller = {
 														checkUniqeValue(apikey, "PATIENT_ID|" + patientId, 'PATIENT', function(resPatientID){
 															if(resPatientID.err_code > 0){
 																var identifierId = 'ide' + uniqid.time();
+																//set by sistem
+																var identifierSystem = identifierId;
+													  		
 													  		dataIdentifier = {
 													  											"id": identifierId,
 											  													"use": identifierUseCode,
@@ -3803,7 +3803,7 @@ var controller = {
 																							if(resContactGender.err_code > 0){
 																								checkUniqeValue(apikey, "CONTACT_POINT_VALUE|" + contactTelecomValue, 'CONTACT_POINT', function(resContactTelecomValue){
 																									if(resContactTelecomValue.err_code == 0){
-																										myEmitter.once("InsertContact", function(){
+																										myEmitter.prependOnceListener("InsertContact", function(){
 																											//proses insert
 																											//set uniqeId
 																											var patientContactId = 'pc' + uniqid.time();
