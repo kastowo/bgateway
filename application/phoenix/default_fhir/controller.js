@@ -106,6 +106,7 @@ var controller = {
       
       //susun query
       var condition = "";
+      var systemURI = "";
 
       if(typeof identifierId !== 'undefined' && identifierId !== ""){
         condition += "identifier_id = '" + identifierId + "' AND ";  
@@ -360,9 +361,11 @@ var controller = {
       var attachmentId = req.query._id;
       var patientId = req.query.patient_id;
       var relatedPersonId = req.query.related_person_id;
+      var personId = req.query.person_id;
 
       //susun query
       var condition = "";
+      var systemURI = "";
 
       if(typeof patientId !== 'undefined' && patientId !== ""){
         condition += "patient_id = '" + patientId + "' AND ";  
@@ -376,6 +379,10 @@ var controller = {
       if(typeof relatedPersonId !== 'undefined' && relatedPersonId !== ""){
         condition += "related_person_id = '" + relatedPersonId + "' AND ";  
         systemURI = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson/'+relatedPersonId+'/Photo/';
+      }
+
+      if(typeof personId !== 'undefined' && personId !== ""){
+        systemURI = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person/'+personId+'/Photo/';
       }
 
       if(condition == ""){

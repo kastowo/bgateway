@@ -4598,7 +4598,6 @@ var controller = {
 							err_msg = "Identifier Value is empty";
 						}else{
 							dataIdentifier.value = identifierValue;
-							dataIdentifier.system = host + ':' + port + '/' + apikey + '/Patient/'+ patientId +'/Identifier/'+ identifierId;
 						}
 					}else{
 						identifierValue = "";
@@ -4816,20 +4815,29 @@ var controller = {
 									if(resPatientID.err_code > 0){
 										checkUniqeValue(apikey, "HUMAN_NAME_ID|" + humanNameId, 'HUMAN_NAME', function(resHumanNameID){
 											if(resHumanNameID.err_code > 0){
-												checkCode(apikey, humanNameUseCode, 'NAME_USE', function(resUseCode){
-													if(resUseCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
-														ApiFHIR.put('humanName', {"apikey": apikey, "_id": humanNameId, "dr": "PATIENT_ID|"+patientId}, {body: dataHumanName, json: true}, function(error, response, body){
-									  					humanName = body;
-									  					if(humanName.err_code > 0){
-									  						res.json(humanName);	
-									  					}else{
-									  						res.json({"err_code": 0, "err_msg": "Human Name has been update in this patient.", "data": humanName.data});
-									  					}
-									  				})	
-													}else{
-														res.json({"err_code": 501, "err_msg": "Name use code not found"});
-													}
+
+												myEmitter.prependOnceListener('updateHumanName', function(){
+													ApiFHIR.put('humanName', {"apikey": apikey, "_id": humanNameId, "dr": "PATIENT_ID|"+patientId}, {body: dataHumanName, json: true}, function(error, response, body){
+								  					humanName = body;
+								  					if(humanName.err_code > 0){
+								  						res.json(humanName);	
+								  					}else{
+								  						res.json({"err_code": 0, "err_msg": "Human Name has been update in this patient.", "data": humanName.data});
+								  					}
+								  				})
 												})
+
+												if(!validator.isEmpty(humanNameUseCode)){
+													checkCode(apikey, humanNameUseCode, 'NAME_USE', function(resUseCode){
+														if(resUseCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+															myEmitter.emit('updateHumanName');			
+														}else{
+															res.json({"err_code": 501, "err_msg": "Name use code not found"});
+														}
+													})
+												}else{
+													myEmitter.emit('updateHumanName');
+												}
 											}else{
 												res.json({"err_code": 505, "err_msg": "Human Name Id not found"});		
 											}

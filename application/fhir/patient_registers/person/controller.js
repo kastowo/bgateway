@@ -278,9 +278,10 @@ var controller = {
 								  	if(person.data.length > 0){
 								  		newPerson = [];
 								  		for(i=0; i < person.data.length; i++){
-								  			myEmitter.once("getAttachment", function(person, index, newPerson, countPerson){
+								  			myEmitter.prependOnceListener("getAttachment", function(person, index, newPerson, countPerson){
 									  			qString = {};
-									  			qString.attachment_id = person.attachment_id;
+									  			qString._id = person.attachment_id;
+									  			qString.person_id = person.id;
 										  		seedPhoenixFHIR.path.GET = {
 														"Attachment" : {
 															"location": "%(apikey)s/Attachment",
@@ -302,7 +303,7 @@ var controller = {
 
 															newPerson[index] = objectPerson;
 
-															myEmitter.once("getIdentifier", function(person, index, newPerson, countPerson){
+															myEmitter.prependOnceListener("getIdentifier", function(person, index, newPerson, countPerson){
 																//get identifier
 												  			qString = {};
 												  			qString.person_id = person.id;
@@ -329,7 +330,7 @@ var controller = {
 																		newPerson[index] = objectPerson
 
 																		//human_name
-																		myEmitter.once('getHumanName', function(person, index, newPerson, countPerson){
+																		myEmitter.prependOnceListener('getHumanName', function(person, index, newPerson, countPerson){
 																			qString = {};
 															  			qString.person_id = person.id;
 																  		seedPhoenixFHIR.path.GET = {
@@ -356,7 +357,7 @@ var controller = {
 
 																					newPerson[index] = objectPerson;
 																					
-																					myEmitter.once('getContactPoint', function(person, index, newPerson, countPerson){
+																					myEmitter.prependOnceListener('getContactPoint', function(person, index, newPerson, countPerson){
 																						qString = {};
 																		  			qString.person_id = person.id;
 																			  		seedPhoenixFHIR.path.GET = {
@@ -384,7 +385,7 @@ var controller = {
 
 																								newPerson[index] = objectPerson;
 																								
-																								myEmitter.once('getAddress', function(person, index, newPerson, countPerson){
+																								myEmitter.prependOnceListener('getAddress', function(person, index, newPerson, countPerson){
 																									qString = {};
 																					  			qString.person_id = person.id;
 																						  		seedPhoenixFHIR.path.GET = {
@@ -414,7 +415,7 @@ var controller = {
 
 																											newPerson[index] = objectPerson;
 
-																											myEmitter.once('getPersonLink', function(person, index, newPerson, countPerson){
+																											myEmitter.prependOnceListener('getPersonLink', function(person, index, newPerson, countPerson){
 																												qString = {};
 																								  			qString.person_id = person.id;
 																									  		seedPhoenixFHIR.path.GET = {
@@ -959,10 +960,6 @@ var controller = {
 						err_msg = "Please add key 'period' in json identifier request.";
 					}  
 
-					//set by sistem
-					var identifierSystem = host + ':' + port + '/' + apikey + 'identifier/value/' + identifierValue 
-
-
 					//human_name
 					//use code
 					if(typeof req.body.name.use !== 'undefined'){
@@ -1441,8 +1438,8 @@ var controller = {
 																										checkCode(apikey, attachmentLanguageCode, 'LANGUAGES', function(resLanguage){
 																											if(resLanguage.err_code > 0){
 																												//event emiter
-																												myEmitter.once('checkOrganizationId', function() {
-																													myEmitter.once('checkIdentifierValue', function(){
+																												myEmitter.prependOnceListener('checkOrganizationId', function() {
+																													myEmitter.prependOnceListener('checkIdentifierValue', function(){
 																														checkUniqeValue(apikey, "IDENTIFIER_VALUE|" + identifierValue, 'IDENTIFIER', function(resUniqeValue){
 																															if(resUniqeValue.err_code == 0){ //untuk ini nilai code harus sama dengan 0, menunjukan value tersebut belum ada
 																																checkUniqeValue(apikey, "CONTACT_POINT_VALUE|" + contactPointValue, 'CONTACT_POINT', function(resContactPointValue){
@@ -1485,7 +1482,7 @@ var controller = {
 																																													"hash": sha1(attachmentData),
 																																													"title": attachmentTitle,
 																																													"creation": getFormattedDate(),
-																																													"url": host + ':' + port + '/' + apikey + '/attachment/' + attachmentId
+																																													"url": attachmentId
 																																												}
 																																		
 																																		//method, endpoint, params, options, callback
@@ -1505,7 +1502,7 @@ var controller = {
 																															  											"id": identifierId,
 																													  													"use": identifierUseCode,
 																													  													"type": identifierTypeCode,
-																													  													"system": identifierSystem,
+																													  													"system": identifierId,
 																													  													"value": identifierValue,
 																													  													"period_start": identifierPeriodStart,
 																													  													"period_end": identifierPeriodEnd,
@@ -2943,20 +2940,29 @@ var controller = {
 									if(resPersonID.err_code > 0){
 										checkUniqeValue(apikey, "HUMAN_NAME_ID|" + humanNameId, 'HUMAN_NAME', function(resHumanNameID){
 											if(resHumanNameID.err_code > 0){
-												checkCode(apikey, humanNameUseCode, 'NAME_USE', function(resUseCode){
-													if(resUseCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
-														ApiFHIR.put('humanName', {"apikey": apikey, "_id": humanNameId, "dr": "PERSON_ID|"+personId}, {body: dataHumanName, json: true}, function(error, response, body){
-									  					humanName = body;
-									  					if(humanName.err_code > 0){
-									  						res.json(humanName);	
-									  					}else{
-									  						res.json({"err_code": 0, "err_msg": "Human Name has been update in this person.", "data": humanName.data});
-									  					}
-									  				})	
-													}else{
-														res.json({"err_code": 501, "err_msg": "Name use code not found"});
-													}
+
+												myEmitter.prependOnceListener('updateHumanName', function(){
+													ApiFHIR.put('humanName', {"apikey": apikey, "_id": humanNameId, "dr": "PERSON_ID|"+personId}, {body: dataHumanName, json: true}, function(error, response, body){
+								  					humanName = body;
+								  					if(humanName.err_code > 0){
+								  						res.json(humanName);	
+								  					}else{
+								  						res.json({"err_code": 0, "err_msg": "Human Name has been update in this person.", "data": humanName.data});
+								  					}
+								  				})
 												})
+
+												if(!validator.isEmpty(humanNameUseCode)){
+													checkCode(apikey, humanNameUseCode, 'NAME_USE', function(resUseCode){
+														if(resUseCode.err_code > 0){ //code harus lebih besar dari nol, ini menunjukan datanya valid
+															myEmitter.emit('updateHumanName');			
+														}else{
+															res.json({"err_code": 501, "err_msg": "Name use code not found"});
+														}
+													})
+												}else{
+													myEmitter.emit('updateHumanName');
+												}
 											}else{
 												res.json({"err_code": 505, "err_msg": "Human Name Id not found"});		
 											}

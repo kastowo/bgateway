@@ -236,11 +236,11 @@ var controller = {
           var PersonLink = {};
           PersonLink.id = rez[i].person_link_id;
 
-          if(rez[i].person_link_target_patient != null){
+          if(rez[i].person_link_target_patient !== 'null'){
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient?_id=' +  rez[i].person_link_target_patient;
-          }else if(rez[i].person_link_target_practitioner != null){
+          }else if(rez[i].person_link_target_practitioner !== 'null'){
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner?_id=' +  rez[i].person_link_target_practitioner;
-          }else if(rez[i].person_link_target_related_person != null){
+          }else if(rez[i].person_link_target_related_person !== 'null'){
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson?_id=' +  rez[i].person_link_target_related_person;
           }else{
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person?_id=' +  rez[i].person_link_target_person;
@@ -292,8 +292,8 @@ var controller = {
       var person_link_id = req.body.id;
       var patientId = req.body.patient_id;
       var practitionerId = req.body.practitioner_id;
-      var personId = req.body.related_person_id;
-      var relatedPersonId = req.body.person_id;
+      var relatedPersonId = req.body.related_person_id;
+      var personId = req.body.person_id;
       var personId2 = req.body.person_id2;
       var assurance= req.body.assurance;
 
@@ -344,11 +344,11 @@ var controller = {
             var PersonLink = {};
             PersonLink.id = rez[i].person_link_id;
 
-            if(rez[i].person_link_target_patient != null){
+            if(rez[i].person_link_target_patient !== 'null'){
               PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient?_id=' +  rez[i].person_link_target_patient;
-            }else if(rez[i].person_link_target_practitioner != null){
+            }else if(rez[i].person_link_target_practitioner !== 'null'){
               PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner?_id=' +  rez[i].person_link_target_practitioner;
-            }else if(rez[i].person_link_target_related_person != null){
+            }else if(rez[i].person_link_target_related_person !== 'null'){
               PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson?_id=' +  rez[i].person_link_target_related_person;
             }else{
               PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person?_id=' +  rez[i].person_link_target_person;
@@ -476,11 +476,11 @@ var controller = {
           var PersonLink = {};
           PersonLink.id = rez[i].person_link_id;
 
-          if(rez[i].person_link_target_patient != null){
+          if(rez[i].person_link_target_patient !== 'null'){
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Patient?_id=' +  rez[i].person_link_target_patient;
-          }else if(rez[i].person_link_target_practitioner != null){
+          }else if(rez[i].person_link_target_practitioner !== 'null'){
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Practitioner?_id=' +  rez[i].person_link_target_practitioner;
-          }else if(rez[i].person_link_target_related_person != null){
+          }else if(rez[i].person_link_target_related_person !== 'null'){
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/RelatedPerson?_id=' +  rez[i].person_link_target_related_person;
           }else{
             PersonLink.target = hostFHIR + ':' + portFHIR + '/' + apikey + '/Person?_id=' +  rez[i].person_link_target_person;

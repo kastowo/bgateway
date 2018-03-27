@@ -1267,7 +1267,7 @@ var controller = {
 						err_code = 2;
 						err_msg = "Characteristic exclude is boolean.";
 					}else{
-						characteristicValue.exclude = characteristicExclude;
+						dataGroupCharacteristic.exclude = characteristicExclude;
 					}
 				}
 
